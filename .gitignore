@@ -1,0 +1,27 @@
+# Java
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Native
+build/
+*.obj
+*.lib
+*.exp
+*.dll
+*.pdb
+*.ilk
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
