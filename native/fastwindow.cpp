@@ -11,6 +11,7 @@
 struct WindowState {
     WNDPROC originalWndProc;
     int minW, minH, maxW, maxH;
+    int bgR, bgG, bgB;
 };
 
 static std::map<HWND, WindowState> g_windowStates;
@@ -31,7 +32,31 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             if (state.minH > 0) mmi->ptMinTrackSize.y = state.minH;
             if (state.maxW > 0) mmi->ptMaxTrackSize.x = state.maxW;
             if (state.maxH > 0) mmi->ptMaxTrackSize.y = state.maxH;
-            return 0; // Handled
+            return 0;
+        }
+        case WM_ERASEBKGND: {
+            HDC hdc = (HDC)wParam;
+            RECT rect;
+            GetClientRect(hwnd, &rect);
+            HBRUSH brush = CreateSolidBrush(RGB(state.bgR, state.bgG, state.bgB));
+            FillRect(hdc, &rect, brush);
+            DeleteObject(brush);
+            return 1;
+        }
+        case WM_WINDOWPOSCHANGING: {
+            WINDOWPOS* wp = (WINDOWPOS*)lParam;
+            // Only apply NOCOPYBITS if we are actually resizing
+            if (!(wp->flags & SWP_NOSIZE)) {
+                wp->flags |= SWP_NOCOPYBITS;
+            }
+            break;
+        }
+        case WM_SIZE: {
+            // Tell the OS that the window is "clean" immediately.
+            // This prevents the OS from triggering a secondary "erase" 
+            // that causes the text to flicker before Java draws.
+            ValidateRect(hwnd, NULL);
+            break;
         }
         case WM_DESTROY: {
             // Restore original proc and cleanup
@@ -120,8 +145,16 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* en
         style &= ~WS_MAXIMIZEBOX;
     }
     SetWindowLongPtr(h, GWL_STYLE, style);
-    // Force a redraw of the frame
     SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetBackgroundColor(JNIEnv* env, jobject obj, jlong hwnd, jint r, jint g, jint b) {
+    HWND h = (HWND)hwnd;
+    if (g_windowStates.find(h) != g_windowStates.end()) {
+        g_windowStates[h].bgR = r;
+        g_windowStates[h].bgG = g;
+        g_windowStates[h].bgB = b;
+    }
 }
 
 } // extern "C"

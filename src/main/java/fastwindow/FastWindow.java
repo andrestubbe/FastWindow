@@ -46,6 +46,12 @@ public interface FastWindow {
     void setMaximizable(boolean enabled);
 
     /**
+     * Sets the native background color used to fill the window during resizing.
+     * This should match your Java UI color to eliminate flickering/blackness.
+     */
+    void setBackgroundColor(int r, int g, int b);
+
+    /**
      * Returns the native window handle (HWND).
      */
     long getHWND();

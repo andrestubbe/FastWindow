@@ -56,6 +56,11 @@ public class FastWindowImpl implements FastWindow {
     }
 
     @Override
+    public void setBackgroundColor(int r, int g, int b) {
+        nSetBackgroundColor(hwnd, r, g, b);
+    }
+
+    @Override
     public long getHWND() {
         return hwnd;
     }
@@ -67,4 +72,5 @@ public class FastWindowImpl implements FastWindow {
     private native void nEnableMica(long hwnd, boolean enabled);
     private native void nSetCornerStyle(long hwnd, int style);
     private native void nSetMaximizable(long hwnd, boolean enabled);
+    private native void nSetBackgroundColor(long hwnd, int r, int g, int b);
 }

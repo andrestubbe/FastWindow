@@ -6,3 +6,4 @@ EXPORTS
     Java_fastwindow_FastWindowImpl_nEnableMica
     Java_fastwindow_FastWindowImpl_nSetCornerStyle
     Java_fastwindow_FastWindowImpl_nSetMaximizable
+    Java_fastwindow_FastWindowImpl_nSetBackgroundColor

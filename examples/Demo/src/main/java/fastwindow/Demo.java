@@ -28,6 +28,14 @@ public class Demo {
         panel.add(label, BorderLayout.CENTER);
 
         frame.add(panel);
+
+        // --- LIVE REPAINT HOOK ---
+        // Force Java to repaint the text immediately during native resize
+        frame.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                panel.paintImmediately(0, 0, panel.getWidth(), panel.getHeight());
+            }
+        });
         
         // --- PRO INITIALIZATION ---
         // Create the native peer without showing the window yet
@@ -40,7 +48,10 @@ public class Demo {
         nativeWin.setDarkTheme(true);
 
         System.out.println("[ENGINE] Setting Hard Constraints...");
-        nativeWin.setConstraints(400, 300, 1000, 800);
+        nativeWin.setConstraints(400, 300, 1500, 960);
+
+        System.out.println("[ENGINE] Syncing Native Background Color...");
+        nativeWin.setBackgroundColor(30, 30, 30);
 
         System.out.println("[ENGINE] Disabling Maximize...");
         nativeWin.setMaximizable(false);
