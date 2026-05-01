@@ -24,6 +24,17 @@ frame.setVisible(true);
 
 ---
 
+## Why FastWindow?
+
+FastWindow was built to solve the long-standing native limitations of the standard Java `JFrame` and `Frame` components on Windows:
+
+- **⚪ Title Bar Clutter** — Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that clashes with dark application themes.
+- **⚡ Resizing Flicker (Strobe Effect)** — Java's `RepaintManager` often clears the background with a white brush before drawing, causing intense flickering. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
+- **📏 Soft Constraints** — Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window that snaps back after being resized. FastWindow enforces limits at the kernel level via `WM_GETMINMAXINFO`.
+- **💎 Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow provides direct DWM integration for premium aesthetics.
+
+---
+
 ## Table of Contents
 - [Key Features](#key-features)
 - [Performance](#performance)
