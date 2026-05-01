@@ -1,3 +1,19 @@
+/**
+ * @file fastwindow.cpp
+ * @brief Native Windows Window Engine for Java (FastWindow).
+ * 
+ * This module implements a Win32 message loop hook (subclassing) to provide 
+ * high-performance window management features for Java AWT/Swing windows.
+ * 
+ * Key responsibilities:
+ * - Intercepting WM_GETMINMAXINFO for hard size constraints.
+ * - Intercepting WM_ERASEBKGND for flicker-free color syncing.
+ * - Enforcing WS_CLIPCHILDREN for rendering stability.
+ * 
+ * @author FastJava Team
+ * @version 0.1.0
+ */
+
 #include <jni.h>
 #include <jawt_md.h>
 #include <windows.h>
@@ -5,14 +21,27 @@
 
 #pragma comment(lib, "jawt.lib")
 
+/**
+ * @struct WindowState
+ * @brief Stores the native state and configuration for a subclassed window.
+ */
 struct WindowState {
-    WNDPROC originalWndProc;
-    int minW, minH, maxW, maxH;
-    int bgR, bgG, bgB;
+    WNDPROC originalWndProc; ///< Pointer to the original AWT Window Procedure.
+    int minW, minH;          ///< Minimum width/height constraints.
+    int maxW, maxH;          ///< Maximum width/height constraints.
+    int bgR, bgG, bgB;       ///< Background color for flicker-free erasing.
 };
 
+/// Global registry of subclassed windows and their states.
 static std::map<HWND, WindowState> g_windowStates;
 
+/**
+ * @brief Custom Window Procedure that intercepts Win32 messages.
+ * 
+ * This function is injected into the Java window's message loop. 
+ * It handles geometry and rendering messages before passing control back 
+ * to the original AWT procedure.
+ */
 LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     auto it = g_windowStates.find(hwnd);
     if (it == g_windowStates.end()) return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -21,6 +50,7 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
     switch (msg) {
         case WM_GETMINMAXINFO: {
+            // Enforce hard constraints at the kernel level
             MINMAXINFO* mmi = (MINMAXINFO*)lParam;
             if (state.minW > 0) mmi->ptMinTrackSize.x = state.minW;
             if (state.minH > 0) mmi->ptMinTrackSize.y = state.minH;
@@ -29,6 +59,7 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             return 0;
         }
         case WM_ERASEBKGND: {
+            // Fill background immediately with synced color to prevent flickering
             HDC hdc = (HDC)wParam;
             RECT rect;
             GetClientRect(hwnd, &rect);
@@ -38,17 +69,16 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             return 1;
         }
         case WM_WINDOWPOSCHANGING: {
-            // REMOVED SWP_NOCOPYBITS: 
-            // We now let Windows stretch the old content. 
-            // This prevents black traces and keeps the UI visible.
+            // Intentionally left empty to allow Windows to copy bits for fluid scaling
             break;
         }
         case WM_SIZE: {
-            // Still validate to prevent extra OS erases
+            // Validate the rectangle to prevent the OS from doing additional erases
             ValidateRect(hwnd, NULL);
             break;
         }
         case WM_DESTROY: {
+            // Restore the original Window Procedure before the window is destroyed
             SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)state.originalWndProc);
             g_windowStates.erase(hwnd);
             break;
@@ -60,6 +90,12 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 extern "C" {
 
+/**
+ * @brief Captures the HWND from a Java Component.
+ * 
+ * Uses the JDK JAWT (Java AWT Native Interface) to extract the native
+ * window handle.
+ */
 JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, jobject obj, jobject component) {
     JAWT awt;
     awt.version = JAWT_VERSION_1_7;
@@ -76,12 +112,15 @@ JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, job
     return (jlong)hwnd;
 }
 
+/**
+ * @brief Subclasses the window and sets size constraints.
+ */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* env, jobject obj, jlong hwnd, jint minW, jint minH, jint maxW, jint maxH) {
     HWND h = (HWND)hwnd;
     if (g_windowStates.find(h) == g_windowStates.end()) {
         WNDPROC oldProc = (WNDPROC)SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)FastWindowProc);
         
-        // Keep WS_CLIPCHILDREN to protect the client area
+        // Add WS_CLIPCHILDREN to protect the client area from parent erases
         LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
         SetWindowLongPtr(h, GWL_STYLE, style | WS_CLIPCHILDREN);
         
@@ -93,6 +132,7 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* en
         g_windowStates[h].maxH = maxH;
     }
 
+    // Trigger an immediate resize check
     RECT rect;
     if (GetWindowRect(h, &rect)) {
         int w = rect.right - rect.left;
@@ -108,6 +148,9 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* en
     }
 }
 
+/**
+ * @brief Toggles the native maximize box style.
+ */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
     HWND h = (HWND)hwnd;
     LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
@@ -117,6 +160,9 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* en
     SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
+/**
+ * @brief Updates the cached background color in the native state.
+ */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetBackgroundColor(JNIEnv* env, jobject obj, jlong hwnd, jint r, jint g, jint b) {
     HWND h = (HWND)hwnd;
     if (g_windowStates.find(h) != g_windowStates.end()) {
