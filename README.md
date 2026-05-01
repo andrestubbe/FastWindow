@@ -1,4 +1,4 @@
-# FastWindow — Native Windows Window Engine for Java
+# FastWindow — Native Windows Window Engine for Java [v0.1.0]
 
 **High-performance window management and Win32 turbocharging for Java applications.**
 
@@ -7,22 +7,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JitPack](https://jitpack.io/v/andrestubbe/FastWindow.svg)](https://jitpack.io/#andrestubbe/FastWindow)
 
-FastWindow is a "Native Turbocharger" for Java AWT/Swing windows. It bypasses the limitations of the standard Java window management by interacting directly with the Windows **Desktop Window Manager (DWM)** and the Win32 message loop to provide butter-smooth resizing and modern aesthetics.
-
-```java
-// Quick Start — Supercharge your JFrame
-JFrame frame = new JFrame("FastWindow Demo");
-frame.addNotify(); // Create native peer
-
-FastWindow win = FastWindow.attach(frame);
-win.setDarkTheme(true);
-win.setConstraints(400, 300, 1500, 960);
-win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
-
-frame.setVisible(true);
-```
-
 ---
+
+**FastWindow** is the high-performance native window management module for the FastJava ecosystem. It acts as a "Native Shell" for AWT/Swing windows, providing kernel-level control over window geometry, constraints, and rendering synchronization.
 
 ## Why FastWindow?
 
@@ -31,12 +18,13 @@ FastWindow was built to solve the long-standing native limitations of the standa
 - **⚪ Title Bar Clutter** — Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that clashes with dark application themes.
 - **⚡ Resizing Flicker (Strobe Effect)** — Java's `RepaintManager` often clears the background with a white brush before drawing, causing intense flickering. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
 - **📏 Soft Constraints** — Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window that snaps back after being resized. FastWindow enforces limits at the kernel level via `WM_GETMINMAXINFO`.
-- **💎 Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow provides direct DWM integration for premium aesthetics.
+- **💎 Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow provides direct DWM integration via the `FastTheme` module.
 
 ---
 
 ## Table of Contents
 - [Key Features](#key-features)
+- [Quick Start](#quick-start)
 - [Performance](#performance)
 - [Installation](#installation)
 - [Try the Demo](#try-the-demo)
@@ -50,11 +38,26 @@ FastWindow was built to solve the long-standing native limitations of the standa
 
 ## Key Features
 
-- **🚀 Flicker-Free Resizing** — Uses native `WM_ERASEBKGND` hooks and `ValidateRect` to eliminate the classic Java "strobe" effect.
-- **🛡️ Hard Constraints** — Native `WM_GETMINMAXINFO` enforcement that stops the window at boundaries without jitter.
-- **💎 Modern Aesthetics** — One-click access to Immersive Dark Mode and Windows 11 Mica material.
-- **🎮 Maximize Control** — Natively disable or cap the maximize functionality to fit your UI design.
+- **🚀 Fluid UI Scaling** — Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native scaling strategy.
+- **🛡️ Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel, providing jitter-free boundaries.
+- **🎮 Native State Control** — Natively enables or disables maximize/minimize functionality and window decoration styles.
 - **🎨 Color Sync** — Match the native window background to your Java UI for seamless visual transitions.
+- **⚡ HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay).
+
+---
+
+## Quick Start
+
+```java
+JFrame frame = new JFrame("FastWindow Demo");
+frame.addNotify(); // Create native peer WITHOUT showing yet
+
+FastWindow win = FastWindow.attach(frame);
+win.setConstraints(400, 300, 1500, 960);
+win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
+
+frame.setVisible(true); // Appears already constrained and stable!
+```
 
 ---
 
@@ -72,16 +75,26 @@ FastWindow significantly improves the perceived performance of Swing application
 
 ## Installation
 
-FastWindow requires **FastCore** for native library extraction and loading.
+### Option 1: Maven (Recommended)
+Add the JitPack repository and the dependencies to your `pom.xml`:
 
-### Maven (JitPack)
 ```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
 <dependencies>
+    <!-- 1. The FastWindow Module -->
     <dependency>
         <groupId>io.github.andrestubbe</groupId>
         <artifactId>fastwindow</artifactId>
         <version>0.1.0</version>
     </dependency>
+    
+    <!-- 2. FastCore (Required for native loading) -->
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>fastcore</artifactId>
@@ -89,6 +102,27 @@ FastWindow requires **FastCore** for native library extraction and loading.
     </dependency>
 </dependencies>
 ```
+
+### Option 2: Gradle (via JitPack)
+```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'io.github.andrestubbe:fastwindow:0.1.0'
+    implementation 'com.github.andrestubbe:fastcore:v1.0.0'
+}
+```
+
+### Option 3: Direct Download (No Build Tool)
+Download the latest JARs directly to add them to your classpath:
+
+1. 📦 **[fastwindow-v0.1.0.jar](https://github.com/andrestubbe/FastWindow/releases)** (The Core Library)
+2. ⚙️ **[fastcore-v1.0.0.jar](https://github.com/andrestubbe/FastCore/releases)** (The Mandatory Native Loader)
+
+> [!IMPORTANT]
+> Both JARs must be in your classpath for the native JNI calls to function correctly.
 
 ---
 
@@ -98,7 +132,7 @@ Want to see the native resizing in action?
 
 1. Clone this repository.
 2. Run `run-demo.bat`.
-3. Try aggressively resizing the window and observe the stable dark theme.
+3. Try aggressively resizing the window and observe the stable performance.
 
 ---
 
@@ -108,10 +142,9 @@ Want to see the native resizing in action?
 |--------|-------------|
 | `static FastWindow attach(Component c)` | Attaches the native engine to a Java window/canvas. |
 | `void setConstraints(minW, minH, maxW, maxH)` | Enforces kernel-level size limits. |
-| `void setDarkTheme(boolean)` | Toggles Windows Immersive Dark Mode. |
 | `void setMaximizable(boolean)` | Enables/Disables the native maximize button. |
 | `void setBackgroundColor(r, g, b)` | Syncs native background erase to your UI color. |
-| `void enableMica(boolean)` | Enables Windows 11 Mica material effect. |
+| `long getHWND()` | Returns the native window handle. |
 
 ---
 
@@ -141,4 +174,10 @@ MIT License — See [LICENSE](LICENSE) file for details.
 - [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
 
 ---
-**Made with ⚡ by Andre Stubbe**
+**Part of the FastJava Ecosystem** — *Making the JVM faster.*
+
+<!-- SEO KEYWORDS -->
+<!-- 
+java jni native fastjava windows api performance tuning swing flicker resizing 
+dwm window handle jframe decoration 
+-->

@@ -14,7 +14,6 @@ public class FastWindowImpl implements FastWindow {
     private final long hwnd;
 
     public FastWindowImpl(Component component) {
-        // Ensure the component is displayable to get the HWND
         Window window = SwingUtilities.getWindowAncestor(component);
         if (window == null && component instanceof Window) {
             window = (Window) component;
@@ -36,21 +35,6 @@ public class FastWindowImpl implements FastWindow {
     }
 
     @Override
-    public void setDarkTheme(boolean enabled) {
-        nSetDarkTheme(hwnd, enabled);
-    }
-
-    @Override
-    public void enableMica(boolean enabled) {
-        nEnableMica(hwnd, enabled);
-    }
-
-    @Override
-    public void setCornerStyle(int style) {
-        nSetCornerStyle(hwnd, style);
-    }
-
-    @Override
     public void setMaximizable(boolean enabled) {
         nSetMaximizable(hwnd, enabled);
     }
@@ -68,9 +52,6 @@ public class FastWindowImpl implements FastWindow {
     // --- Native Methods ---
     private native long nGetHWND(Component c);
     private native void nSetConstraints(long hwnd, int minW, int minH, int maxW, int maxH);
-    private native void nSetDarkTheme(long hwnd, boolean enabled);
-    private native void nEnableMica(long hwnd, boolean enabled);
-    private native void nSetCornerStyle(long hwnd, int style);
     private native void nSetMaximizable(long hwnd, boolean enabled);
     private native void nSetBackgroundColor(long hwnd, int r, int g, int b);
 }

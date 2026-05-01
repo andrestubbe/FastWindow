@@ -1,13 +1,10 @@
 #include <jni.h>
 #include <jawt_md.h>
 #include <windows.h>
-#include <dwmapi.h>
 #include <map>
 
-#pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "jawt.lib")
 
-// Global map to store window constraints and original WNDPROC
 struct WindowState {
     WNDPROC originalWndProc;
     int minW, minH, maxW, maxH;
@@ -16,9 +13,6 @@ struct WindowState {
 
 static std::map<HWND, WindowState> g_windowStates;
 
-/**
- * Custom Window Procedure to intercept OS messages.
- */
 LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     auto it = g_windowStates.find(hwnd);
     if (it == g_windowStates.end()) return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -44,22 +38,17 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             return 1;
         }
         case WM_WINDOWPOSCHANGING: {
-            WINDOWPOS* wp = (WINDOWPOS*)lParam;
-            // Only apply NOCOPYBITS if we are actually resizing
-            if (!(wp->flags & SWP_NOSIZE)) {
-                wp->flags |= SWP_NOCOPYBITS;
-            }
+            // REMOVED SWP_NOCOPYBITS: 
+            // We now let Windows stretch the old content. 
+            // This prevents black traces and keeps the UI visible.
             break;
         }
         case WM_SIZE: {
-            // Tell the OS that the window is "clean" immediately.
-            // This prevents the OS from triggering a secondary "erase" 
-            // that causes the text to flicker before Java draws.
+            // Still validate to prevent extra OS erases
             ValidateRect(hwnd, NULL);
             break;
         }
         case WM_DESTROY: {
-            // Restore original proc and cleanup
             SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)state.originalWndProc);
             g_windowStates.erase(hwnd);
             break;
@@ -89,11 +78,14 @@ JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, job
 
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* env, jobject obj, jlong hwnd, jint minW, jint minH, jint maxW, jint maxH) {
     HWND h = (HWND)hwnd;
-    
-    // Subclass if not already done
     if (g_windowStates.find(h) == g_windowStates.end()) {
         WNDPROC oldProc = (WNDPROC)SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)FastWindowProc);
-        g_windowStates[h] = { oldProc, minW, minH, maxW, maxH };
+        
+        // Keep WS_CLIPCHILDREN to protect the client area
+        LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
+        SetWindowLongPtr(h, GWL_STYLE, style | WS_CLIPCHILDREN);
+        
+        g_windowStates[h] = { oldProc, minW, minH, maxW, maxH, 30, 30, 30 };
     } else {
         g_windowStates[h].minW = minW;
         g_windowStates[h].minH = minH;
@@ -101,49 +93,26 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* en
         g_windowStates[h].maxH = maxH;
     }
 
-    // Force immediate enforcement
     RECT rect;
     if (GetWindowRect(h, &rect)) {
         int w = rect.right - rect.left;
         int h_val = rect.bottom - rect.top;
-        int newW = w;
-        int newH = h_val;
-
+        int newW = w; int newH = h_val;
         if (maxW > 0 && w > maxW) newW = maxW;
         if (minW > 0 && w < minW) newW = minW;
         if (maxH > 0 && h_val > maxH) newH = maxH;
         if (minH > 0 && h_val < minH) newH = minH;
-
         if (newW != w || newH != h_val) {
             SetWindowPos(h, NULL, 0, 0, newW, newH, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
         }
     }
 }
 
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetDarkTheme(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
-    BOOL dark = enabled ? TRUE : FALSE;
-    DwmSetWindowAttribute((HWND)hwnd, 20, &dark, sizeof(dark));
-}
-
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nEnableMica(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
-    if (enabled) {
-        int backdrop = 2; // Mica
-        DwmSetWindowAttribute((HWND)hwnd, 38, &backdrop, sizeof(backdrop));
-    }
-}
-
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetCornerStyle(JNIEnv* env, jobject obj, jlong hwnd, jint style) {
-    DwmSetWindowAttribute((HWND)hwnd, 33, &style, sizeof(style));
-}
-
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
     HWND h = (HWND)hwnd;
     LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
-    if (enabled) {
-        style |= WS_MAXIMIZEBOX;
-    } else {
-        style &= ~WS_MAXIMIZEBOX;
-    }
+    if (enabled) style |= WS_MAXIMIZEBOX;
+    else style &= ~WS_MAXIMIZEBOX;
     SetWindowLongPtr(h, GWL_STYLE, style);
     SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
@@ -151,9 +120,7 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* en
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetBackgroundColor(JNIEnv* env, jobject obj, jlong hwnd, jint r, jint g, jint b) {
     HWND h = (HWND)hwnd;
     if (g_windowStates.find(h) != g_windowStates.end()) {
-        g_windowStates[h].bgR = r;
-        g_windowStates[h].bgG = g;
-        g_windowStates[h].bgB = b;
+        g_windowStates[h].bgR = r; g_windowStates[h].bgG = g; g_windowStates[h].bgB = b;
     }
 }
 

@@ -34,6 +34,7 @@ public class Demo {
         frame.addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent e) {
                 panel.paintImmediately(0, 0, panel.getWidth(), panel.getHeight());
+                java.awt.Toolkit.getDefaultToolkit().sync(); // Force OS graphics flush
             }
         });
         
@@ -43,9 +44,16 @@ public class Demo {
 
         System.out.println("[ENGINE] Attaching FastWindow (Pre-Visibility)...");
         FastWindow nativeWin = FastWindow.attach(frame);
+        long hwnd = nativeWin.getHWND();
         
-        System.out.println("[ENGINE] Enabling Immersive Dark Mode...");
-        nativeWin.setDarkTheme(true);
+        System.out.println("[THEME] Applying Immersive Dark Mode via FastTheme...");
+        fasttheme.FastTheme.setTitleBarDarkMode(hwnd, true);
+
+        System.out.println("[THEME] Enabling Windows 11 Mica via FastTheme...");
+        fasttheme.FastTheme.enableMica(hwnd, true);
+
+        System.out.println("[THEME] Setting Rounded Corners via FastTheme...");
+        fasttheme.FastTheme.setCornerStyle(hwnd, 2);
 
         System.out.println("[ENGINE] Setting Hard Constraints...");
         nativeWin.setConstraints(400, 300, 1500, 960);
@@ -58,6 +66,7 @@ public class Demo {
 
         // Now show the window - it will appear already dark and constrained!
         frame.setVisible(true);
+        frame.repaint(); // Ensure initial visibility
 
         System.out.println("[ENGINE] Success. No more startup jump!");
     }

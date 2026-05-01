@@ -35,6 +35,11 @@
             <artifactId>fastwindow</artifactId>
             <version>0.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.andrestubbe</groupId>
+            <artifactId>fasttheme</artifactId>
+            <version>0.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>

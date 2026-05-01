@@ -22,7 +22,7 @@ echo [COMPILER] Compiling Native Library...
 
 :: Constructing arguments carefully to avoid length issues
 set "INCLUDES=/I"%JAVA_PATH%\include" /I"%JAVA_PATH%\include\win32""
-set "LIBS=user32.lib gdi32.lib dwmapi.lib "%JAVA_PATH%\lib\jawt.lib""
+set "LIBS=user32.lib gdi32.lib "%JAVA_PATH%\lib\jawt.lib""
 set "FLAGS=/LD /EHsc /nologo"
 set "OUTPUT=/Fe:src\main\resources\native\%PROJECT_NAME%.dll"
 

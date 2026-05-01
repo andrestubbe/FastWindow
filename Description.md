@@ -1,20 +1,23 @@
 # FastWindow
 
-**FastWindow** ist das Modul zur Kontrolle der nativen Fenster-Eigenschaften unter Windows. Es ist der "Hardware-Turbo" für AWT/Swing-Fenster.
+**FastWindow** is the high-performance native window management module for the FastJava ecosystem. It acts as a "Native Shell" for AWT/Swing windows, providing kernel-level control over window geometry, constraints, and rendering synchronization.
 
-## Kernfunktionen
+## Core Features
 
-- **DWM-Integration:** Mica, Acrylic, Dark Mode und abgerundete Ecken nativ steuern.
-- **Resize-Engine:** Behebt das typische Java-Flackern beim Resizen durch native `WM_SIZE` und `WM_PAINT` Hooks.
-- **Constraints:** Erzwingt Min/Max-Größen direkt im Windows-Kernel (`WM_GETMINMAXINFO`), sodass das Fenster beim Erreichen der Grenze nicht "springt".
-- **Overlay-Support:** Click-Through-Fenster und präzises Z-Order Management.
-- **Tracking:** Erlaubt es einem Fenster, sich an ein anderes Fenster "zu heften" (Sticky-Overlay).
+- **🚀 Flicker-Free Resizing** — Eliminates the classic Java "strobe" effect during resize operations via native background erase hooks.
+- **🛡️ Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel (`WM_GETMINMAXINFO`), providing jitter-free boundaries.
+- **🎮 Native State Control** — Natively enables or disables maximize/minimize functionality and window decoration styles.
+- **🎨 Render Synchronization** — Matches native background "void" colors to Java UI colors for seamless visual transitions.
+- **⚡ HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay) to identify and style the window.
 
-## Status
+## Current Status (v0.1.0)
 - [x] JNI HWND Capture (JAWT)
-- [x] Immersive Dark Mode
-- [x] Mica Material Effect
-- [ ] Native Size Constraints (Step 2)
-- [ ] Smooth Resize Hook (Step 3)
-- [ ] Click-Through Mode
-- [ ] Window Tracking
+- [x] Native Size Constraints (Kernel Enforcement)
+- [x] Flicker-Free Resize Hook (WM_ERASEBKGND)
+- [x] Native Background Color Sync
+- [x] Native Maximize Toggle
+- [ ] Click-Through Mode (Ghost Mode)
+- [ ] Window Tracking (Sticky Overlay)
+
+## Strategic Role
+FastWindow is the **Identity Provider** for the FastJava ecosystem. It finds and manages the window, while modules like **FastTheme** (Visuals) and **FastOverlay** (Graphics) use the handles provided by FastWindow to do their work.
