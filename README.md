@@ -1,4 +1,4 @@
-# FastWindow — Native Windows Window Engine for Java [v0.1.0]
+﻿# FastWindow â€” Native Windows Window Engine for Java [v0.1.0]
 
 **High-performance window management and Win32 turbocharging for Java applications.**
 
@@ -15,10 +15,10 @@
 
 FastWindow was built to solve the long-standing native limitations of the standard Java `JFrame` and `Frame` components on Windows:
 
-- **⚪ Title Bar Clutter** — Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that clashes with dark application themes.
-- **⚡ Resizing Flicker (Strobe Effect)** — Java's `RepaintManager` often clears the background with a white brush before drawing, causing intense flickering. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
-- **📏 Soft Constraints** — Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window that snaps back after being resized. FastWindow enforces limits at the kernel level via `WM_GETMINMAXINFO`.
-- **💎 Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow provides direct DWM integration via the `FastTheme` module.
+- **âšª Title Bar Clutter** â€” Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that clashes with dark application themes.
+- **âš¡ Resizing Flicker (Strobe Effect)** â€” Java's `RepaintManager` often clears the background with a white brush before drawing, causing intense flickering. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
+- **ðŸ“ Soft Constraints** â€” Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window that snaps back after being resized. FastWindow enforces limits at the kernel level via `WM_GETMINMAXINFO`.
+- **ðŸ’Ž Lack of Modern Materials** â€” AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow provides direct DWM integration via the `FastTheme` module.
 
 ---
 
@@ -38,11 +38,11 @@ FastWindow was built to solve the long-standing native limitations of the standa
 
 ## Key Features
 
-- **🚀 Fluid UI Scaling** — Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native scaling strategy.
-- **🛡️ Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel, providing jitter-free boundaries.
-- **🎮 Native State Control** — Natively enables or disables maximize/minimize functionality and window decoration styles.
-- **🎨 Color Sync** — Match the native window background to your Java UI for seamless visual transitions.
-- **⚡ HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay).
+- **ðŸš€ Fluid UI Scaling** â€” Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native scaling strategy.
+- **ðŸ›¡ï¸ Kernel-Level Constraints** â€” Enforces hard Min/Max window sizes directly in the Windows kernel, providing jitter-free boundaries.
+- **ðŸŽ® Native State Control** â€” Natively enables or disables maximize/minimize functionality and window decoration styles.
+- **ðŸŽ¨ Color Sync** â€” Match the native window background to your Java UI for seamless visual transitions.
+- **âš¡ HWND Identity** â€” Provides the stable native handle used by other modules (FastTheme, FastOverlay).
 
 ---
 
@@ -78,7 +78,7 @@ FastWindow significantly improves the perceived performance of Swing application
 ### Option 1: Maven (Recommended)
 Add the JitPack repository and the dependencies to your `pom.xml`:
 
-`xml
+```xml
 <repositories>
     <repository>
         <id>jitpack.io</id>
@@ -93,6 +93,7 @@ Add the JitPack repository and the dependencies to your `pom.xml`:
         <artifactId>fastwindow</artifactId>
         <version>v0.1.0</version>
     </dependency>
+
     <!-- FastCore (Required Native Loader) -->
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
@@ -100,19 +101,19 @@ Add the JitPack repository and the dependencies to your `pom.xml`:
         <version>v0.1.0</version>
     </dependency>
 </dependencies>
-`
+```
 
 ### Option 2: Gradle (via JitPack)
-`groovy
+```groovy
 repositories {
     maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-    implementation 'com.github.andrestubbe:.1.0'
+    implementation 'com.github.andrestubbe:fastwindow:v0.1.0'
     implementation 'com.github.andrestubbe:fastcore:v0.1.0'
 }
-`
+```
 
 ### Option 3: Direct Download (No Build Tool)
 Download the latest JARs directly to add them to your classpath:
@@ -150,8 +151,8 @@ Want to see the native resizing in action?
 
 | Platform | Status |
 |----------|--------|
-| Windows 10/11 (x64) | ✅ Fully Supported |
-| Linux / macOS | 🚧 Not Planned (Win32 Specific) |
+| Windows 10/11 (x64) | âœ… Fully Supported |
+| Linux / macOS | ðŸš§ Not Planned (Win32 Specific) |
 
 ---
 
@@ -162,17 +163,17 @@ For detailed instructions on compiling the C++ JNI code, see [COMPILE.md](COMPIL
 ---
 
 ## License
-MIT License — See [LICENSE](LICENSE) file for details.
+MIT License â€” See [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Related Projects
-- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
-- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — High-performance RawInput engine
-- [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
+- [FastCore](https://github.com/andrestubbe/FastCore) â€” Native Library Loader for Java
+- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) â€” High-performance RawInput engine
+- [FastTheme](https://github.com/andrestubbe/FastTheme) â€” Advanced UI styling engine
 
 ---
-**Part of the FastJava Ecosystem** — *Making the JVM faster.*
+**Part of the FastJava Ecosystem** â€” *Making the JVM faster.*
 
 <!-- SEO KEYWORDS -->
 <!-- 
