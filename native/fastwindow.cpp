@@ -73,8 +73,8 @@ LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             break;
         }
         case WM_SIZE: {
-            // Validate the rectangle to prevent the OS from doing additional erases
-            ValidateRect(hwnd, NULL);
+            // Force an immediate synchronous repaint of the entire window tree
+            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
             break;
         }
         case WM_DESTROY: {
