@@ -14,6 +14,41 @@ synchronization.
 
 [![FastKeyboard Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Why FastWindow](#why-fastwindow)
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Performance](#performance)
+- [Installation](#installation)
+- [Try the Demo](#try-the-demo)
+- [API Reference](#api-reference)
+- [Platform Support](#platform-support)
+- [Building from Source](#building-from-source)
+- [License](#license)
+- [Related Projects](#related-projects)
+
+---
+
+## Quick Start
+
+```java
+import fastghostmouse.FastGhostMouse;
+
+public class Example {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("FastWindow Demo");
+        frame.addNotify(); // Create native peer WITHOUT showing yet
+        FastWindow win = FastWindow.attach(frame);
+        win.setConstraints(400, 300, 1500, 960);
+        win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
+        frame.setVisible(true); // Appears already constrained and stable!
+    }
+}
+```
 
 ---
 
@@ -33,21 +68,6 @@ on Windows:
 
 ---
 
-## Table of Contents
-
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Performance](#performance)
-- [Installation](#installation)
-- [Try the Demo](#try-the-demo)
-- [API Reference](#api-reference)
-- [Platform Support](#platform-support)
-- [Building from Source](#building-from-source)
-- [License](#license)
-- [Related Projects](#related-projects)
-
----
-
 ## Key Features
 
 - **🚀 Fluid UI Scaling** — Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native
@@ -58,29 +78,6 @@ on Windows:
   styles.
 - **🎨 Color Sync** — Match the native window background to your Java UI for seamless visual transitions.
 - **⚡ HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay).
-
----
-
-## Quick Start
-
-```java
-JFrame frame = new JFrame("FastWindow Demo");
-frame.
-
-addNotify(); // Create native peer WITHOUT showing yet
-
-FastWindow win = FastWindow.attach(frame);
-win.
-
-setConstraints(400,300,1500,960);
-win.
-
-setBackgroundColor(30,30,30); // Eliminate resize flicker
-
-frame.
-
-setVisible(true); // Appears already constrained and stable!
-```
 
 ---
 
