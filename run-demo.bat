@@ -9,7 +9,7 @@ call compile.bat
 
 echo.
 echo Building main project...
-call mvn clean install -DskipTests
+call mvn -q clean install -DskipTests
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ❌ Maven build failed.
