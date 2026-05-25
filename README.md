@@ -6,11 +6,15 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe)
 
+---
+
 **⚡ High-performance window management and Win32 turbocharging for Java applications.**
 
 **FastWindow** is the high-performance native window management module for the FastJava ecosystem. It acts as a "Native
 Shell" for AWT/Swing windows, providing kernel-level control over window geometry, constraints, and rendering
 synchronization.
+
+---
 
 [![FastKeyboard Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
