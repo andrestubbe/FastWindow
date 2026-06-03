@@ -1,4 +1,4 @@
-﻿# FastWindow v0.1.0 [ALPHA] — Native Windows Window Engine for Java
+# FastWindow v0.1.0 [ALPHA] � Native Windows Window Engine for Java
 
 [![Status](https://img.shields.io/badge/status-v0.1.0-brightgreen.svg)](https://github.com/andrestubbe/FastWindow/releases/tag/v0.1.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,7 +8,7 @@
 
 ---
 
-**⚡ High-performance window management and Win32 turbocharging for Java applications.**
+**? High-performance window management and Win32 turbocharging for Java applications.**
 
 **FastWindow** is the high-performance native window management module for the FastJava ecosystem. It acts as a "Native
 Shell" for AWT/Swing windows, providing kernel-level control over window geometry, constraints, and rendering
@@ -61,27 +61,27 @@ public class Example {
 FastWindow was built to solve the long-standing native limitations of the standard Java `JFrame` and `Frame` components
 on Windows:
 
-- **⚪ Title Bar Clutter** — Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that
+- **? Title Bar Clutter** � Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar that
   clashes with dark application themes.
-- **⚡ Resizing Flicker (Strobe Effect)** — Java's `RepaintManager` often clears the background with a white brush before
+- **? Resizing Flicker (Strobe Effect)** � Java's `RepaintManager` often clears the background with a white brush before
   drawing, causing intense flickering. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
-- **📏 Soft Constraints** — Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window
+- **?? Soft Constraints** � Java's `setMinimumSize` is enforced via asynchronous events, leading to a "jittery" window
   that snaps back after being resized. FastWindow enforces limits at the kernel level via `WM_GETMINMAXINFO`.
-- **💎 Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow
+- **?? Lack of Modern Materials** � AWT has no built-in support for Windows 11 Mica or Acrylic effects. FastWindow
   provides direct DWM integration via the `FastTheme` module.
 
 ---
 
 ## Key Features
 
-- **🚀 Fluid UI Scaling** — Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native
+- **?? Fluid UI Scaling** � Eliminates black traces and flickering during resize operations via a "Safe & Smooth" native
   scaling strategy.
-- **🛡️ Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel, providing
+- **??? Kernel-Level Constraints** � Enforces hard Min/Max window sizes directly in the Windows kernel, providing
   jitter-free boundaries.
-- **🎮 Native State Control** — Natively enables or disables maximize/minimize functionality and window decoration
+- **?? Native State Control** � Natively enables or disables maximize/minimize functionality and window decoration
   styles.
-- **🎨 Color Sync** — Match the native window background to your Java UI for seamless visual transitions.
-- **⚡ HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay).
+- **?? Color Sync** � Match the native window background to your Java UI for seamless visual transitions.
+- **? HWND Identity** � Provides the stable native handle used by other modules (FastTheme, FastOverlay).
 
 ---
 
@@ -146,9 +146,9 @@ dependencies {
 
 Download the latest JARs directly to add them to your classpath:
 
-1. 📦 **[fastwindow-v0.1.0.jar](https://github.com/andrestubbe/FastWindow/releases/download/v0.1.0/fastwindow-v0.1.0.jar)
+1. ?? **[fastwindow-v0.1.0.jar](https://github.com/andrestubbe/FastWindow/releases/download/v0.1.0/fastwindow-v0.1.0.jar)
    ** (The Core Library)
-2. ⚙️ **[fastcore-v0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/v0.1.0/fastcore-v0.1.0.jar)** (
+2. ?? **[fastcore-v0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/v0.1.0/fastcore-v0.1.0.jar)** (
    The Mandatory Native Loader)
 
 > [!IMPORTANT]
@@ -180,7 +180,7 @@ Want to see the native resizing in action?
 
 * **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
 * **[REFERENCE.md](docs/REFERENCE.md)**: Full API descriptions, border configurations, and codepoint index.
-* **[PHILOSOPHIE.md](docs/PHILOSOPHIE.md)**: The engineering rationale for zero-allocation performance.
+* **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for zero-allocation performance.
 * **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
 
 ---
@@ -189,8 +189,8 @@ Want to see the native resizing in action?
 
 | Platform            | Status                          |
 |---------------------|---------------------------------|
-| Windows 10/11 (x64) | ✅ Fully Supported               |
-| Linux / macOS       | 🚧 Not Planned (Win32 Specific) |
+| Windows 10/11 (x64) | ? Fully Supported               |
+| Linux / macOS       | ?? Not Planned (Win32 Specific) |
 
 ---
 
@@ -202,18 +202,18 @@ For detailed instructions on compiling the C++ JNI code, see [COMPILE.md](docs/C
 
 ## License
 
-MIT License — See [LICENSE](LICENSE) file for details.
+MIT License � See [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Related Projects
 
-- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
-- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) — High-performance RawInput engine
-- [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI styling engine
+- [FastCore](https://github.com/andrestubbe/FastCore) � Native Library Loader for Java
+- [FastKeyboard](https://github.com/andrestubbe/FastKeyboard) � High-performance RawInput engine
+- [FastTheme](https://github.com/andrestubbe/FastTheme) � Advanced UI styling engine
 
 ---
-**Part of the FastJava Ecosystem** — *Making the JVM faster. Small package. Maximum speed. Zero bloat. 🚀📋*
+**Part of the FastJava Ecosystem** � *Making the JVM faster. Small package. Maximum speed. Zero bloat. ????*
 
 
 
