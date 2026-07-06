@@ -1,0 +1,44 @@
+========================================================================
+FastWindow Roadmap & Native Window Implementation TODO
+========================================================================
+
+Goal: Eliminate AWT/Swing fully by creating a native Win32 window engine 
+and implementing direct GPU-accelerated texture blitting.
+
+------------------------------------------------------------------------
+1. Native Win32 Window Engine (Bypass JFrame / AWT)
+------------------------------------------------------------------------
+- [ ] Register custom window class via RegisterClassExW.
+- [ ] Create native window handle (HWND) using CreateWindowExW.
+- [ ] Implement native thread-safe Message Loop (GetMessage/DispatchMessage) 
+      running in a dedicated native background thread.
+- [ ] Expose native event callbacks to Java via JNI (Mouse, Keyboard, Resize).
+- [ ] Implement Window state control:
+      - Borderless/Frameless window mode.
+      - Custom titlebar rendering.
+      - Snap-layouts support for Windows 11.
+      - Strict WM_GETMINMAXINFO size limits enforcement.
+
+------------------------------------------------------------------------
+2. GPU-Accelerated Modular Blitting (FastGraphics Integration)
+------------------------------------------------------------------------
+- [ ] Implement Modular Layer Baking:
+      - Split UI into independent dirty-tracked logical buffers (e.g., Sidebar, 
+        Chat history, TextArea).
+      - Re-upload only updated module slices to GPU VRAM (via loadTexture) 
+        instead of full-screen texture uploads to conserve PCIe bandwidth.
+- [ ] Direct SwapChain Presentation:
+      - Present final composited frame directly onto the DXGI/OpenGL SwapChain 
+        buffer, skipping the Java2D blitting loop.
+
+------------------------------------------------------------------------
+3. Native OS Integration & Inputs
+------------------------------------------------------------------------
+- [ ] Keyboard & IME:
+      - Map virtual key codes natively.
+      - Handle composition strings (IME) for international layout inputs.
+- [ ] Drag & Drop:
+      - Integrate native OLE/IDropTarget interfaces to allow direct file 
+        and text drops into the native HWND.
+- [ ] Accessibility:
+      - Expose native UI structure via Microsoft UI Automation (UIA).
