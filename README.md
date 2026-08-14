@@ -16,6 +16,27 @@ synchronization.
 
 ---
 
+## Quick Start
+
+```java
+import fastwindow.FastWindow;
+
+public class Example {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("FastWindow Demo");
+        frame.addNotify(); // Create native peer WITHOUT showing yet
+        FastWindow win = FastWindow.attach(frame);
+        win.setConstraints(400, 300, 1500, 960);
+        win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
+        frame.setVisible(true); // Appears already constrained and stable!
+    }
+}
+```
+
+---
+
+---
+
 ## Table of Contents
 
 - [Why FastWindow?](#why-fastwindow)
@@ -62,24 +83,6 @@ FastWindow was built to solve the long-standing native limitations of the standa
 
 ---
 
-## Quick Start
-
-```java
-import fastwindow.FastWindow;
-
-public class Example {
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("FastWindow Demo");
-        frame.addNotify(); // Create native peer WITHOUT showing yet
-        FastWindow win = FastWindow.attach(frame);
-        win.setConstraints(400, 300, 1500, 960);
-        win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
-        frame.setVisible(true); // Appears already constrained and stable!
-    }
-}
-```
-
----
 
 ## Installation
 
