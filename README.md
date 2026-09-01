@@ -95,7 +95,7 @@ FastWindow is rigorously profiled using **JMH** (Java Microbenchmark Harness) to
 | **Dynamic Unicode Titling (`setTitle`)** | **~211 ops/ms** | **> 211,000** | **~4.7 µs (DWM Sync)** |
 | **Bounds Dispatch (`setBounds`)** | **~118 ops/ms** | **> 118,000** | **~8.4 µs (Win32 API)** |
 
-*Measured on Windows 11 (x64), Intel Core i5 / AMD Ryzen, OpenJDK 21.0.12 LTS. FastWindow executes standalone native message pumping without AWT event loop contention.*
+*Measured on Windows 11, Intel Core i5-1135G7 (Surface Pro 8), JDK 21.0.12.*
 
 ---
 
