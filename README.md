@@ -45,6 +45,33 @@ public class NativeExample {
 
 ---
 
+## Table of Contents
+
+- [Why FastWindow?](#why-fastwindow)
+- [Quick Start](#quick-start)
+- [Key Features](#key-features)
+- [Performance & Benchmarks](#performance--benchmarks)
+- [Installation](#installation)
+- [API Reference](#api-reference)
+- [Documentation](#documentation)
+- [Platform Support](#platform-support)
+- [License](#license)
+- [Related Projects](#related-projects)
+
+---
+
+## Why FastWindow?
+
+Standard Java windows (`JFrame`, `Frame`) on Windows suffer from significant native limitations when used with modern GPU rendering pipelines:
+
+- ❌ **Swing/AWT Event Loop Overhead** — AWT uses asynchronous, multi-threaded event dispatching that induces boundary jitter and frame drops during live resize.
+- ❌ **Flicker & Erase Issues** — Default Win32 background erases cause white/black flashing before GPU frames present.
+- ❌ **Lack of Modern DWM Harmony** — Java frames cannot natively toggle Windows 11 rounded corners, immersive Dark Mode, or title bar colors without custom JNI hooks.
+
+**FastWindow** eliminates the entire Java AWT layer and creates pure, kernel-direct Win32 windows with direct HWND access for **FastVulkan** and **FastGraphics**.
+
+---
+
 ## Key Features
 
 - 🪟 **Pure Standalone Win32 Windows** — Zero-overhead native windows with direct UTF-16 Unicode titlebars, fullscreen, centering, and icon support.
