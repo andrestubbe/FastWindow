@@ -31,7 +31,7 @@ public class Demo {
 
             long hwnd = window.getHWND();
             if (hwnd != 0) {
-                // Apply Full Black Theme and Dark Mode via FastTheme
+                // Apply Full Black Theme, Titlebar, and Body Background via FastTheme
                 FastTheme.setTitleBarDarkMode(hwnd, true);
                 FastTheme.setTitleBarColor(hwnd, 20, 20, 20);
                 FastTheme.setTitleBarTextColor(hwnd, 240, 240, 240);

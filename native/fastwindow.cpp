@@ -43,8 +43,25 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
     auto ctx = (StandaloneWindowContext*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
     switch (uMsg) {
-    case WM_ERASEBKGND:
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        HBRUSH brush = (HBRUSH)GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND);
+        if (!brush) brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
+        FillRect(hdc, &rc, brush);
         return 1;
+    }
+
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        HBRUSH brush = (HBRUSH)GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND);
+        if (!brush) brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
+        FillRect(hdc, &ps.rcPaint, brush);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
 
     case WM_SIZE:
         if (ctx) {
