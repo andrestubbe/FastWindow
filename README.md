@@ -180,25 +180,13 @@ dependencies {
 }
 ```
 
----
+### Option 3: Direct Download (No Build Tool)
 
-## API Reference
+Download the latest JARs directly to add them to your classpath:
 
-| Method | Description |
-|-----------------------------------------------|-----------------------------------------------------|
-| `static FastNativeWindow create(title, w, h)` | Creates a standalone native Win32 window (Vulkan/DirectX target). |
-| `long getHWND()` | Returns the 64-bit native window handle (HWND). |
-| `boolean pollEvents()` | Pumps native Win32 message loop (`PeekMessageW`/`DispatchMessageW`). |
-| `void setTitle(String title)` | Updates native window title with dynamic UTF-16 Unicode text. |
-| `void setVisible(boolean visible)` | Shows (`SW_SHOW`) or hides the native window. |
-| `void setIconImage(BufferedImage img)` | Sets the native 32-bit ARGB title bar and taskbar icon. |
-| `void setFullscreen(boolean fullscreen)` | Toggles borderless exclusive fullscreen mode. |
-| `void setMinimumSize(minW, minH)` | Sets kernel-level min track size via `WM_GETMINMAXINFO`. |
-| `void setMaximumSize(maxW, maxH)` | Sets kernel-level max track size via `WM_GETMINMAXINFO`. |
-| `void setResizable(boolean resizable)` | Toggles `WS_THICKFRAME` and `WS_MAXIMIZEBOX` styles. |
-| `void setAlwaysOnTop(boolean alwaysOnTop)` | Sets `HWND_TOPMOST` window order. |
-| `void centerOnScreen()` | Centers the window on the active monitor. |
-| `void close()` | Destroys the window handle and frees native context. |
+1. 📦 **[fastwindow-0.1.1.jar](https://github.com/andrestubbe/FastWindow/releases/download/0.1.1/fastwindow-0.1.1.jar)** (The Core Library)
+2. 📦 **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (Required Native JNI loader)
+3. 📦 **[fasttheme-0.1.4.jar](https://github.com/andrestubbe/FastTheme/releases/download/0.1.4/fasttheme-0.1.4.jar)** (Recommended for Dark Mode & Styling)
 
 ---
 
