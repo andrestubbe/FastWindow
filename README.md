@@ -14,7 +14,7 @@ FastWindow provides zero-overhead, kernel-direct Win32 native window creation (`
 
 ---
 
-## Quick Start (Vulkan & GPU Window Engine)
+## Quick Start
 
 ```java
 import fastwindow.FastNativeWindow;
