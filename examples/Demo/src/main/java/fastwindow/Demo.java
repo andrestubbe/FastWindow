@@ -1,73 +1,65 @@
 package fastwindow;
 
-import javax.swing.*;
-import java.awt.*;
+import fasttheme.FastTheme;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 
-/**
- * FastWindow Step 1 Demo — Testing HWND Capture and Dark Mode.
- */
 public class Demo {
+
+    private static BufferedImage createRoundIcon() {
+        BufferedImage icon = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = icon.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(Color.WHITE);
+        g.fillOval(4, 4, 56, 56);
+        g.dispose();
+        return icon;
+    }
+
     public static void main(String[] args) {
-        // Use a Dark Theme for the content to match the title bar
-        try {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception e) {}
+        // Auto-hide console if started from batch
+        long consoleHwnd = FastTheme.getConsoleWindowHandle();
+        if (consoleHwnd != 0) {
+            FastTheme.setWindowTransparency(consoleHwnd, 0);
+        }
 
-        JFrame frame = new JFrame("FastWindow — Native Turbocharger");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null);
+        try (FastNativeWindow window = FastWindow.create("FastWindow — Native Black Window Demo", 1024, 600)) {
+            // Set native round window icon
+            window.setIconImage(createRoundIcon());
 
-        // Add some content
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(30, 30, 30));
-        
-        JLabel label = new JLabel("FastWindow is active!", SwingConstants.CENTER);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        panel.add(label, BorderLayout.CENTER);
-
-        frame.add(panel);
-
-        // --- LIVE REPAINT HOOK ---
-        // Force Java to repaint the text immediately during native resize
-        frame.addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                panel.paintImmediately(0, 0, panel.getWidth(), panel.getHeight());
-                java.awt.Toolkit.getDefaultToolkit().sync(); // Force OS graphics flush
+            long hwnd = window.getHWND();
+            if (hwnd != 0) {
+                // Apply Full Black Theme and Dark Mode via FastTheme
+                FastTheme.setTitleBarDarkMode(hwnd, true);
+                FastTheme.setTitleBarColor(hwnd, 20, 20, 20);
+                FastTheme.setTitleBarTextColor(hwnd, 240, 240, 240);
+                FastTheme.setWindowBackgroundColor(hwnd, 20, 20, 20);
+                FastTheme.setCornerStyle(hwnd, 2); // Windows 11 Rounded corners
             }
-        });
-        
-        // --- PRO INITIALIZATION ---
-        // Create the native peer without showing the window yet
-        frame.addNotify();
 
-        System.out.println("[ENGINE] Attaching FastWindow (Pre-Visibility)...");
-        FastWindow nativeWin = FastWindow.attach(frame);
-        long hwnd = nativeWin.getHWND();
-        
-        System.out.println("[THEME] Applying Immersive Dark Mode via FastTheme...");
-        fasttheme.FastTheme.setTitleBarDarkMode(hwnd, true);
+            // Show window seamlessly once styled
+            window.setVisible(true);
 
-        System.out.println("[THEME] Enabling Windows 11 Mica via FastTheme...");
-        fasttheme.FastTheme.enableMica(hwnd, true);
+            long lastFpsTime = System.nanoTime();
+            int frames = 0;
 
-        System.out.println("[THEME] Setting Rounded Corners via FastTheme...");
-        fasttheme.FastTheme.setCornerStyle(hwnd, 2);
+            while (window.pollEvents()) {
+                frames++;
+                long now = System.nanoTime();
+                if (now - lastFpsTime >= 1_000_000_000L) {
+                    window.setTitle("FastWindow Native Black Window - FPS: " + frames);
+                    frames = 0;
+                    lastFpsTime = now;
+                }
 
-        System.out.println("[ENGINE] Setting Hard Constraints...");
-        nativeWin.setConstraints(400, 300, 1500, 960);
+                try {
+                    Thread.sleep(16); // ~60 Hz tick
+                } catch (InterruptedException ignored) {}
+            }
+        }
 
-        System.out.println("[ENGINE] Syncing Native Background Color...");
-        nativeWin.setBackgroundColor(30, 30, 30);
-
-        System.out.println("[ENGINE] Disabling Maximize...");
-        nativeWin.setMaximizable(false);
-
-        // Now show the window - it will appear already dark and constrained!
-        frame.setVisible(true);
-        frame.repaint(); // Ensure initial visibility
-
-        System.out.println("[ENGINE] Success. No more startup jump!");
+        System.out.println("FastWindow demo closed successfully.");
     }
 }

@@ -5,19 +5,20 @@ echo ===========================================
 echo âš¡ FastWindow Demo Launcher âš¡
 echo ===========================================
 
-echo.
 echo Building native core...
 call compile.bat
 
 echo.
+echo Installing FastWindow to local Maven cache...
+call mvn -q clean install -DskipTests
 
 echo.
-echo Running Demo...
+echo Running FastWindow Black Window Demo...
 cd examples\Demo
-call mvn compile exec:java
+call mvn -q compile exec:java
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo âŒ Demo execution failed.
+    echo Demo execution failed.
 )
 cd ..\..
 pause

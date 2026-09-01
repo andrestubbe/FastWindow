@@ -1,16 +1,16 @@
-# FastWindow 0.1.0 [ALPHA-2026-06-14] — Native Windows Window Engine for Java
+# FastWindow 0.2.0 — Native Windows Window Engine for Java
 
-[![Status](https://img.shields.io/badge/status-0.1.0-brightgreen.svg)](https://github.com/andrestubbe/FastWindow/releases/tag/0.1.0)
+[![Status](https://img.shields.io/badge/status-0.2.0-brightgreen.svg)](https://github.com/andrestubbe/FastWindow/releases/tag/0.2.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe/FastWindow)
 
-**⚡ High-performance window management and Win32 turbocharging for Java applications.**
+**⚡ High-performance Win32 native window engine and AWT/Swing turbocharger for Java applications.**
 
-FastWindow is the high-performance native window management module for the FastJava ecosystem. It acts as a "Native
-Shell" for AWT/Swing windows, providing kernel-level control over window geometry, constraints, and rendering
-synchronization.
+FastWindow provides ultra-high performance native window creation and management for the FastJava ecosystem. It offers two powerful modes:
+1. **Pure Native Win32 Windows (`FastWindow.create`)**: Ultra-lightweight, zero-overhead standalone native windows directly rendering via Vulkan/DirectX/DWM.
+2. **Native Shell for AWT/Swing (`FastWindow.attach`)**: Subclasses existing Java frames for kernel-level geometry constraints and flicker-free resizing.
 
 [![FastWindow Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
@@ -18,10 +18,40 @@ synchronization.
 
 ## Quick Start
 
+### 1. Pure Standalone Native Window (Recommended for Vulkan/DirectX)
+
+```java
+import fastwindow.FastNativeWindow;
+import fastwindow.FastWindow;
+import fasttheme.FastTheme;
+
+public class NativeExample {
+    public static void main(String[] args) {
+        try (FastNativeWindow window = FastWindow.create("FastWindow — Native Engine", 1024, 600)) {
+            long hwnd = window.getHWND();
+            
+            // Dark Mode & Black Titlebar via FastTheme
+            FastTheme.setTitleBarDarkMode(hwnd, true);
+            FastTheme.setTitleBarColor(hwnd, 20, 20, 20);
+            FastTheme.setCornerStyle(hwnd, 2); // Windows 11 Rounded Corners
+            
+            window.setVisible(true);
+
+            while (window.pollEvents()) {
+                // Render frame...
+            }
+        }
+    }
+}
+```
+
+### 2. Supercharging Existing Swing / AWT Windows
+
 ```java
 import fastwindow.FastWindow;
+import javax.swing.JFrame;
 
-public class Example {
+public class SwingExample {
     public static void main(String[] args) {
         JFrame frame = new JFrame("FastWindow Demo");
         frame.addNotify(); // Create native peer WITHOUT showing yet
@@ -35,41 +65,13 @@ public class Example {
 
 ---
 
----
-
-## Table of Contents
-
-- [Why FastWindow?](#why-fastwindow)
-- [Key Features](#key-features)
-- [Performance](#performance)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [API Reference](#api-reference)
-- [Documentation](#documentation)
-- [Platform Support](#platform-support)
-- [License](#license)
-- [Related Projects](#related-projects)
-
----
-
-## Why FastWindow?
-
-FastWindow was built to solve the long-standing native limitations of the standard Java `JFrame` and `Frame` on Windows:
-
-- 🌑 **Title Bar Clutter** — Standard Java frames cannot natively toggle Dark Mode, resulting in a white title bar clashing with dark themes.
-- 🔆 **Resizing Flicker** — Java's `RepaintManager` clears the background with a white brush before drawing, causing strobing. FastWindow uses native `WM_ERASEBKGND` hooks to eliminate this.
-- 📏 **Soft Constraints** — Java's `setMinimumSize` is enforced via async events, causing jittery snapping. FastWindow enforces limits at kernel level via `WM_GETMINMAXINFO`.
-- 🎨 **Lack of Modern Materials** — AWT has no built-in support for Windows 11 Mica or Acrylic. FastWindow provides direct DWM integration via `FastTheme`.
-
----
-
 ## Key Features
 
-- 🪟 **Fluid UI Scaling** — Eliminates black traces and flickering during resize via a "Safe & Smooth" native scaling strategy.
-- 📏 **Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel for jitter-free boundaries.
-- 🎛️ **Native State Control** — Natively enables or disables maximize/minimize functionality and window decoration styles.
-- 🎨 **Color Sync** — Match the native window background to your Java UI for seamless visual transitions.
-- 🔑 **HWND Identity** — Provides the stable native handle used by other modules (FastTheme, FastOverlay).
+- 🪟 **Pure Standalone Win32 Windows** — Zero-overhead native windows with Unicode titlebars, fullscreen, centering, and icon support.
+- ⚡ **Zero-Jitter Live Resize** — Hardware-synced message pump with immediate bounds dispatching.
+- 📏 **Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel via `WM_GETMINMAXINFO`.
+- 🎨 **DWM & FastTheme Harmony** — Native Dark Mode, title bar coloring, and rounded corners for Windows 11.
+- 🔑 **Universal HWND Access** — Provides a clean 64-bit native HWND handle for Vulkan, DirectX, and DWM composition engines.
 
 ---
 

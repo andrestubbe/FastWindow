@@ -2,100 +2,497 @@
  * @file fastwindow.cpp
  * @brief Native Windows Window Engine for Java (FastWindow).
  * 
- * This module implements a Win32 message loop hook (subclassing) to provide 
- * high-performance window management features for Java AWT/Swing windows.
- * 
- * Key responsibilities:
- * - Intercepting WM_GETMINMAXINFO for hard size constraints.
- * - Intercepting WM_ERASEBKGND for flicker-free color syncing.
- * - Enforcing WS_CLIPCHILDREN for rendering stability.
+ * Implements:
+ * 1. Pure standalone Win32 Native Windows (FastNativeWindow / FastWindow.create)
+ * 2. Legacy AWT/Swing Subclassing (FastWindow.attach)
  * 
  * @author FastJava Team
- * @version 0.1.0
+ * @version 0.2.0
  */
 
 #include <jni.h>
 #include <jawt_md.h>
 #include <windows.h>
 #include <map>
+#include <vector>
+#include <string>
+#include <algorithm>
 
 #pragma comment(lib, "jawt.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "uxtheme.lib")
 
-/**
- * @struct WindowState
- * @brief Stores the native state and configuration for a subclassed window.
- */
-struct WindowState {
-    WNDPROC originalWndProc; ///< Pointer to the original AWT Window Procedure.
-    int minW, minH;          ///< Minimum width/height constraints.
-    int maxW, maxH;          ///< Maximum width/height constraints.
-    int bgR, bgG, bgB;       ///< Background color for flicker-free erasing.
+static const wchar_t* PURE_WINDOW_CLASS_NAME = L"FastNativeWindowClass";
+
+struct StandaloneWindowContext {
+    HWND hwnd = nullptr;
+    HINSTANCE hInstance = nullptr;
+    bool shouldClose = false;
+    bool resized = false;
+    bool isFullscreen = false;
+    RECT savedWindowRect{};
+    DWORD savedStyle = 0;
+    DWORD savedExStyle = 0;
+    int minWidth = 0, minHeight = 0;
+    int maxWidth = 0, maxHeight = 0;
+    int width = 0, height = 0;
 };
 
-/// Global registry of subclassed windows and their states.
-static std::map<HWND, WindowState> g_windowStates;
+// -------------------------------------------------------------
+// Pure Native Win32 Window Procedure
+// -------------------------------------------------------------
+static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    auto ctx = (StandaloneWindowContext*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
-/**
- * @brief Custom Window Procedure that intercepts Win32 messages.
- * 
- * This function is injected into the Java window's message loop. 
- * It handles geometry and rendering messages before passing control back 
- * to the original AWT procedure.
- */
-LRESULT CALLBACK FastWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    auto it = g_windowStates.find(hwnd);
-    if (it == g_windowStates.end()) return DefWindowProc(hwnd, msg, wParam, lParam);
+    switch (uMsg) {
+    case WM_ERASEBKGND:
+        return 1;
 
-    WindowState& state = it->second;
+    case WM_SIZE:
+        if (ctx) {
+            ctx->resized = true;
+            ctx->width = LOWORD(lParam);
+            ctx->height = HIWORD(lParam);
+        }
+        return 0;
 
-    switch (msg) {
-        case WM_GETMINMAXINFO: {
-            // Enforce hard constraints at the kernel level
-            MINMAXINFO* mmi = (MINMAXINFO*)lParam;
-            if (state.minW > 0) mmi->ptMinTrackSize.x = state.minW;
-            if (state.minH > 0) mmi->ptMinTrackSize.y = state.minH;
-            if (state.maxW > 0) mmi->ptMaxTrackSize.x = state.maxW;
-            if (state.maxH > 0) mmi->ptMaxTrackSize.y = state.maxH;
+    case WM_SIZING:
+        if (ctx) {
+            ctx->resized = true;
+        }
+        return 0;
+
+    case WM_GETMINMAXINFO:
+        if (ctx) {
+            LPMINMAXINFO mmi = (LPMINMAXINFO)lParam;
+            if (ctx->minWidth > 0) mmi->ptMinTrackSize.x = ctx->minWidth;
+            if (ctx->minHeight > 0) mmi->ptMinTrackSize.y = ctx->minHeight;
+            if (ctx->maxWidth > 0) mmi->ptMaxTrackSize.x = ctx->maxWidth;
+            if (ctx->maxHeight > 0) mmi->ptMaxTrackSize.y = ctx->maxHeight;
             return 0;
         }
-        case WM_ERASEBKGND: {
-            // Fill background immediately with synced color to prevent flickering
-            HDC hdc = (HDC)wParam;
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            HBRUSH brush = CreateSolidBrush(RGB(state.bgR, state.bgG, state.bgB));
-            FillRect(hdc, &rect, brush);
-            DeleteObject(brush);
-            return 1;
-        }
-        case WM_WINDOWPOSCHANGING: {
-            // Intentionally left empty to allow Windows to copy bits for fluid scaling
-            break;
-        }
-        case WM_SIZE: {
-            // Force an immediate synchronous repaint of the entire window tree
-            RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-            break;
-        }
-        case WM_DESTROY: {
-            // Restore the original Window Procedure before the window is destroyed
-            SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)state.originalWndProc);
-            g_windowStates.erase(hwnd);
-            break;
-        }
+        break;
+
+    case WM_CLOSE:
+        if (ctx) ctx->shouldClose = true;
+        DestroyWindow(hwnd);
+        return 0;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
+// -------------------------------------------------------------
+// Legacy AWT Subclassing State
+// -------------------------------------------------------------
+struct SubclassState {
+    WNDPROC originalWndProc;
+    int minW, minH;
+    int maxW, maxH;
+    int bgR, bgG, bgB;
+};
+
+static std::map<HWND, SubclassState> g_subclassedWindows;
+
+static LRESULT CALLBACK LegacySubclassWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    auto it = g_subclassedWindows.find(hwnd);
+    if (it == g_subclassedWindows.end()) return DefWindowProcW(hwnd, msg, wParam, lParam);
+
+    SubclassState& state = it->second;
+
+    switch (msg) {
+    case WM_GETMINMAXINFO: {
+        MINMAXINFO* mmi = (MINMAXINFO*)lParam;
+        if (state.minW > 0) mmi->ptMinTrackSize.x = state.minW;
+        if (state.minH > 0) mmi->ptMinTrackSize.y = state.minH;
+        if (state.maxW > 0) mmi->ptMaxTrackSize.x = state.maxW;
+        if (state.maxH > 0) mmi->ptMaxTrackSize.y = state.maxH;
+        return 0;
+    }
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rect;
+        GetClientRect(hwnd, &rect);
+        HBRUSH brush = CreateSolidBrush(RGB(state.bgR, state.bgG, state.bgB));
+        FillRect(hdc, &rect, brush);
+        DeleteObject(brush);
+        return 1;
+    }
+    case WM_SIZE: {
+        RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+        break;
+    }
+    case WM_DESTROY: {
+        SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)state.originalWndProc);
+        g_subclassedWindows.erase(hwnd);
+        break;
+    }
     }
 
     return CallWindowProc(state.originalWndProc, hwnd, msg, wParam, lParam);
 }
 
+// -------------------------------------------------------------
+// JNI Exports
+// -------------------------------------------------------------
 extern "C" {
 
-/**
- * @brief Captures the HWND from a Java Component.
- * 
- * Uses the JDK JAWT (Java AWT Native Interface) to extract the native
- * window handle.
- */
+// --- Standalone Pure Window Native Exports ---
+
+JNIEXPORT jlong JNICALL Java_fastwindow_FastNativeWindow_nCreateWindow(
+    JNIEnv* env, jclass clazz, jstring title, jint width, jint height) {
+
+    if (!title) return 0;
+    const jchar* chars = env->GetStringChars(title, nullptr);
+    if (!chars) return 0;
+
+    auto ctx = new StandaloneWindowContext();
+    ctx->width = width;
+    ctx->height = height;
+    ctx->hInstance = GetModuleHandle(nullptr);
+
+    WNDCLASSEXW wc{};
+    wc.cbSize = sizeof(WNDCLASSEXW);
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wc.lpfnWndProc = StandaloneWndProc;
+    wc.hInstance = ctx->hInstance;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.lpszClassName = PURE_WINDOW_CLASS_NAME;
+
+    RegisterClassExW(&wc);
+
+    RECT wr = { 0, 0, width, height };
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+    int winW = wr.right - wr.left;
+    int winH = wr.bottom - wr.top;
+    int screenW = GetSystemMetrics(SM_CXSCREEN);
+    int screenH = GetSystemMetrics(SM_CYSCREEN);
+    int posX = (std::max)(0, (screenW - winW) / 2);
+    int posY = (std::max)(0, (screenH - winH) / 2);
+
+    ctx->hwnd = CreateWindowExW(
+        WS_EX_APPWINDOW,
+        PURE_WINDOW_CLASS_NAME,
+        (LPCWSTR)chars,
+        WS_OVERLAPPEDWINDOW,
+        posX, posY,
+        winW, winH,
+        nullptr, nullptr, ctx->hInstance, nullptr
+    );
+
+    env->ReleaseStringChars(title, chars);
+
+    if (!ctx->hwnd) {
+        delete ctx;
+        return 0;
+    }
+
+    SetWindowLongPtr(ctx->hwnd, GWLP_USERDATA, (LONG_PTR)ctx);
+    return (jlong)ctx;
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nDestroyWindow(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx->hwnd) {
+            DestroyWindow(ctx->hwnd);
+        }
+        delete ctx;
+    }
+}
+
+JNIEXPORT jboolean JNICALL Java_fastwindow_FastNativeWindow_nPollEvents(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return JNI_FALSE;
+    auto ctx = (StandaloneWindowContext*)handle;
+    if (!ctx->hwnd) return JNI_FALSE;
+
+    MSG msg;
+    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_QUIT) {
+            ctx->shouldClose = true;
+        }
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+    return !ctx->shouldClose;
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetTitle(
+    JNIEnv* env, jclass clazz, jlong handle, jstring title) {
+    if (handle && title) {
+        const jchar* chars = env->GetStringChars(title, nullptr);
+        if (chars) {
+            auto ctx = (StandaloneWindowContext*)handle;
+            if (ctx && ctx->hwnd) {
+                SetWindowTextW(ctx->hwnd, (LPCWSTR)chars);
+            }
+            env->ReleaseStringChars(title, chars);
+        }
+    }
+}
+
+JNIEXPORT jlong JNICALL Java_fastwindow_FastNativeWindow_nGetHWND(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return 0;
+    return (jlong)((StandaloneWindowContext*)handle)->hwnd;
+}
+
+JNIEXPORT jint JNICALL Java_fastwindow_FastNativeWindow_nGetWidth(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return 0;
+    auto ctx = (StandaloneWindowContext*)handle;
+    RECT rc;
+    GetClientRect(ctx->hwnd, &rc);
+    return (jint)(rc.right - rc.left);
+}
+
+JNIEXPORT jint JNICALL Java_fastwindow_FastNativeWindow_nGetHeight(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return 0;
+    auto ctx = (StandaloneWindowContext*)handle;
+    RECT rc;
+    GetClientRect(ctx->hwnd, &rc);
+    return (jint)(rc.bottom - rc.top);
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetLocation(
+    JNIEnv* env, jclass clazz, jlong handle, jint x, jint y) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            SetWindowPos(ctx->hwnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+}
+
+JNIEXPORT jint JNICALL Java_fastwindow_FastNativeWindow_nGetX(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return 0;
+    auto ctx = (StandaloneWindowContext*)handle;
+    RECT rc;
+    GetWindowRect(ctx->hwnd, &rc);
+    return (jint)rc.left;
+}
+
+JNIEXPORT jint JNICALL Java_fastwindow_FastNativeWindow_nGetY(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return 0;
+    auto ctx = (StandaloneWindowContext*)handle;
+    RECT rc;
+    GetWindowRect(ctx->hwnd, &rc);
+    return (jint)rc.top;
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetDimensions(
+    JNIEnv* env, jclass clazz, jlong handle, jint width, jint height) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            RECT wr = { 0, 0, width, height };
+            AdjustWindowRect(&wr, GetWindowLong(ctx->hwnd, GWL_STYLE), FALSE);
+            SetWindowPos(ctx->hwnd, nullptr, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetBounds(
+    JNIEnv* env, jclass clazz, jlong handle, jint x, jint y, jint width, jint height) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            RECT wr = { 0, 0, width, height };
+            AdjustWindowRect(&wr, GetWindowLong(ctx->hwnd, GWL_STYLE), FALSE);
+            SetWindowPos(ctx->hwnd, nullptr, x, y, wr.right - wr.left, wr.bottom - wr.top, SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nCenterOnScreen(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            RECT rc;
+            GetWindowRect(ctx->hwnd, &rc);
+            int winW = rc.right - rc.left;
+            int winH = rc.bottom - rc.top;
+            int screenW = GetSystemMetrics(SM_CXSCREEN);
+            int screenH = GetSystemMetrics(SM_CYSCREEN);
+            int x = (std::max)(0, (screenW - winW) / 2);
+            int y = (std::max)(0, (screenH - winH) / 2);
+            SetWindowPos(ctx->hwnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetVisible(
+    JNIEnv* env, jclass clazz, jlong handle, jboolean visible) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            ShowWindow(ctx->hwnd, visible ? SW_SHOW : SW_HIDE);
+            if (visible) UpdateWindow(ctx->hwnd);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetResizable(
+    JNIEnv* env, jclass clazz, jlong handle, jboolean resizable) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            LONG_PTR style = GetWindowLongPtr(ctx->hwnd, GWL_STYLE);
+            if (resizable) style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
+            else style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+            SetWindowLongPtr(ctx->hwnd, GWL_STYLE, style);
+            SetWindowPos(ctx->hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetAlwaysOnTop(
+    JNIEnv* env, jclass clazz, jlong handle, jboolean alwaysOnTop) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        if (ctx && ctx->hwnd) {
+            SetWindowPos(ctx->hwnd, alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetFullscreen(
+    JNIEnv* env, jclass clazz, jlong handle, jboolean fullscreen) {
+    if (!handle) return;
+    auto ctx = (StandaloneWindowContext*)handle;
+    if (!ctx || !ctx->hwnd || ctx->isFullscreen == (bool)fullscreen) return;
+
+    if (fullscreen) {
+        GetWindowRect(ctx->hwnd, &ctx->savedWindowRect);
+        ctx->savedStyle = GetWindowLong(ctx->hwnd, GWL_STYLE);
+        ctx->savedExStyle = GetWindowLong(ctx->hwnd, GWL_EXSTYLE);
+
+        MONITORINFO mi{ sizeof(mi) };
+        HMONITOR hMon = MonitorFromWindow(ctx->hwnd, MONITOR_DEFAULTTOPRIMARY);
+        GetMonitorInfo(hMon, &mi);
+
+        SetWindowLong(ctx->hwnd, GWL_STYLE, ctx->savedStyle & ~(WS_CAPTION | WS_THICKFRAME));
+        SetWindowLong(ctx->hwnd, GWL_EXSTYLE, ctx->savedExStyle & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+
+        SetWindowPos(ctx->hwnd, HWND_TOP,
+                     mi.rcMonitor.left, mi.rcMonitor.top,
+                     mi.rcMonitor.right - mi.rcMonitor.left,
+                     mi.rcMonitor.bottom - mi.rcMonitor.top,
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        ctx->isFullscreen = true;
+    } else {
+        SetWindowLong(ctx->hwnd, GWL_STYLE, ctx->savedStyle);
+        SetWindowLong(ctx->hwnd, GWL_EXSTYLE, ctx->savedExStyle);
+
+        SetWindowPos(ctx->hwnd, nullptr,
+                     ctx->savedWindowRect.left, ctx->savedWindowRect.top,
+                     ctx->savedWindowRect.right - ctx->savedWindowRect.left,
+                     ctx->savedWindowRect.bottom - ctx->savedWindowRect.top,
+                     SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        ctx->isFullscreen = false;
+    }
+}
+
+JNIEXPORT jboolean JNICALL Java_fastwindow_FastNativeWindow_nIsFullscreen(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (!handle) return JNI_FALSE;
+    return ((StandaloneWindowContext*)handle)->isFullscreen ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nMinimize(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (handle) ShowWindow(((StandaloneWindowContext*)handle)->hwnd, SW_MINIMIZE);
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nMaximize(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (handle) ShowWindow(((StandaloneWindowContext*)handle)->hwnd, SW_MAXIMIZE);
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nRestore(
+    JNIEnv* env, jclass clazz, jlong handle) {
+    if (handle) ShowWindow(((StandaloneWindowContext*)handle)->hwnd, SW_RESTORE);
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetMinSize(
+    JNIEnv* env, jclass clazz, jlong handle, jint minW, jint minH) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        ctx->minWidth = minW;
+        ctx->minHeight = minH;
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetMaxSize(
+    JNIEnv* env, jclass clazz, jlong handle, jint maxW, jint maxH) {
+    if (handle) {
+        auto ctx = (StandaloneWindowContext*)handle;
+        ctx->maxWidth = maxW;
+        ctx->maxHeight = maxH;
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetIcon(
+    JNIEnv* env, jclass clazz, jlong handle, jintArray pixels, jint width, jint height) {
+    if (!handle || !pixels || width <= 0 || height <= 0) return;
+    auto ctx = (StandaloneWindowContext*)handle;
+    if (!ctx->hwnd) return;
+
+    jint* rawPixels = env->GetIntArrayElements(pixels, nullptr);
+    if (!rawPixels) return;
+
+    BITMAPV5HEADER bi{};
+    bi.bV5Size = sizeof(BITMAPV5HEADER);
+    bi.bV5Width = width;
+    bi.bV5Height = -height;
+    bi.bV5Planes = 1;
+    bi.bV5BitCount = 32;
+    bi.bV5Compression = BI_BITFIELDS;
+    bi.bV5RedMask   = 0x00FF0000;
+    bi.bV5GreenMask = 0x0000FF00;
+    bi.bV5BlueMask  = 0x000000FF;
+    bi.bV5AlphaMask = 0xFF000000;
+
+    HDC hdc = GetDC(ctx->hwnd);
+    void* lpBits = nullptr;
+    HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &lpBits, nullptr, 0);
+    HBITMAP hMonoMask = CreateBitmap(width, height, 1, 1, nullptr);
+    ReleaseDC(ctx->hwnd, hdc);
+
+    if (hBitmap && lpBits) {
+        memcpy(lpBits, rawPixels, (size_t)width * height * 4);
+
+        ICONINFO ii{};
+        ii.fIcon = TRUE;
+        ii.hbmMask = hMonoMask;
+        ii.hbmColor = hBitmap;
+
+        HICON hIcon = CreateIconIndirect(&ii);
+        if (hIcon) {
+            SendMessageW(ctx->hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            SendMessageW(ctx->hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+        }
+        DeleteObject(hBitmap);
+        DeleteObject(hMonoMask);
+    }
+    env->ReleaseIntArrayElements(pixels, rawPixels, JNI_ABORT);
+}
+
+// --- Legacy AWT Subclassing Native Exports ---
+
 JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, jobject obj, jobject component) {
     JAWT awt;
     awt.version = JAWT_VERSION_1_7;
@@ -112,45 +509,21 @@ JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, job
     return (jlong)hwnd;
 }
 
-/**
- * @brief Subclasses the window and sets size constraints.
- */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* env, jobject obj, jlong hwnd, jint minW, jint minH, jint maxW, jint maxH) {
     HWND h = (HWND)hwnd;
-    if (g_windowStates.find(h) == g_windowStates.end()) {
-        WNDPROC oldProc = (WNDPROC)SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)FastWindowProc);
-        
-        // Add WS_CLIPCHILDREN to protect the client area from parent erases
+    if (g_subclassedWindows.find(h) == g_subclassedWindows.end()) {
+        WNDPROC oldProc = (WNDPROC)SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)LegacySubclassWndProc);
         LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
         SetWindowLongPtr(h, GWL_STYLE, style | WS_CLIPCHILDREN);
-        
-        g_windowStates[h] = { oldProc, minW, minH, maxW, maxH, 30, 30, 30 };
+        g_subclassedWindows[h] = { oldProc, minW, minH, maxW, maxH, 30, 30, 30 };
     } else {
-        g_windowStates[h].minW = minW;
-        g_windowStates[h].minH = minH;
-        g_windowStates[h].maxW = maxW;
-        g_windowStates[h].maxH = maxH;
-    }
-
-    // Trigger an immediate resize check
-    RECT rect;
-    if (GetWindowRect(h, &rect)) {
-        int w = rect.right - rect.left;
-        int h_val = rect.bottom - rect.top;
-        int newW = w; int newH = h_val;
-        if (maxW > 0 && w > maxW) newW = maxW;
-        if (minW > 0 && w < minW) newW = minW;
-        if (maxH > 0 && h_val > maxH) newH = maxH;
-        if (minH > 0 && h_val < minH) newH = minH;
-        if (newW != w || newH != h_val) {
-            SetWindowPos(h, NULL, 0, 0, newW, newH, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
-        }
+        g_subclassedWindows[h].minW = minW;
+        g_subclassedWindows[h].minH = minH;
+        g_subclassedWindows[h].maxW = maxW;
+        g_subclassedWindows[h].maxH = maxH;
     }
 }
 
-/**
- * @brief Toggles the native maximize box style.
- */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
     HWND h = (HWND)hwnd;
     LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
@@ -160,13 +533,10 @@ JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* en
     SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
-/**
- * @brief Updates the cached background color in the native state.
- */
 JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetBackgroundColor(JNIEnv* env, jobject obj, jlong hwnd, jint r, jint g, jint b) {
     HWND h = (HWND)hwnd;
-    if (g_windowStates.find(h) != g_windowStates.end()) {
-        g_windowStates[h].bgR = r; g_windowStates[h].bgG = g; g_windowStates[h].bgB = b;
+    if (g_subclassedWindows.find(h) != g_subclassedWindows.end()) {
+        g_subclassedWindows[h].bgR = r; g_subclassedWindows[h].bgG = g; g_subclassedWindows[h].bgB = b;
     }
 }
 

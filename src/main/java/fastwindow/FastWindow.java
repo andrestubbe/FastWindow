@@ -23,6 +23,18 @@ import java.awt.Component;
 public interface FastWindow {
     
     /**
+     * Creates a high-performance standalone Win32 Native Window.
+     * 
+     * @param title  Window title in UTF-16 Unicode.
+     * @param width  Client area width in pixels.
+     * @param height Client area height in pixels.
+     * @return A standalone FastNativeWindow instance.
+     */
+    static FastNativeWindow create(String title, int width, int height) {
+        return new FastNativeWindow(title, width, height);
+    }
+
+    /**
      * Attaches the native engine to an existing Java Component.
      * <p>This method finds the top-level window ancestor of the component and 
      * subclasses its native message loop.</p>

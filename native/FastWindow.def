@@ -1,5 +1,29 @@
 LIBRARY fastwindow
 EXPORTS
+    Java_fastwindow_FastNativeWindow_nCreateWindow
+    Java_fastwindow_FastNativeWindow_nDestroyWindow
+    Java_fastwindow_FastNativeWindow_nPollEvents
+    Java_fastwindow_FastNativeWindow_nSetTitle
+    Java_fastwindow_FastNativeWindow_nGetHWND
+    Java_fastwindow_FastNativeWindow_nGetWidth
+    Java_fastwindow_FastNativeWindow_nGetHeight
+    Java_fastwindow_FastNativeWindow_nSetLocation
+    Java_fastwindow_FastNativeWindow_nGetX
+    Java_fastwindow_FastNativeWindow_nGetY
+    Java_fastwindow_FastNativeWindow_nSetDimensions
+    Java_fastwindow_FastNativeWindow_nSetBounds
+    Java_fastwindow_FastNativeWindow_nCenterOnScreen
+    Java_fastwindow_FastNativeWindow_nSetVisible
+    Java_fastwindow_FastNativeWindow_nSetResizable
+    Java_fastwindow_FastNativeWindow_nSetAlwaysOnTop
+    Java_fastwindow_FastNativeWindow_nSetFullscreen
+    Java_fastwindow_FastNativeWindow_nIsFullscreen
+    Java_fastwindow_FastNativeWindow_nMinimize
+    Java_fastwindow_FastNativeWindow_nMaximize
+    Java_fastwindow_FastNativeWindow_nRestore
+    Java_fastwindow_FastNativeWindow_nSetMinSize
+    Java_fastwindow_FastNativeWindow_nSetMaxSize
+    Java_fastwindow_FastNativeWindow_nSetIcon
     Java_fastwindow_FastWindowImpl_nGetHWND
     Java_fastwindow_FastWindowImpl_nSetConstraints
     Java_fastwindow_FastWindowImpl_nSetMaximizable
