@@ -212,6 +212,7 @@ Download the latest JARs directly to add them to your classpath:
 
 MIT License — See [LICENSE](LICENSE) file for details.
 
+---
 
 ## Related Projects
 
