@@ -50,6 +50,7 @@ public class NativeExample {
 - [Why FastWindow?](#why-fastwindow)
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
+- [Technical Examples & Hero Demos](#technical-examples--hero-demos)
 - [Performance & Benchmarks](#performance--benchmarks)
 - [Installation](#installation)
 - [API Reference](#api-reference)
@@ -80,6 +81,15 @@ Standard Java windows (`JFrame`, `Frame`) on Windows suffer from significant nat
 - 📏 **Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel via `WM_GETMINMAXINFO`.
 - 🎨 **DWM & FastTheme Harmony** — Native Dark Mode, title bar coloring, and rounded corners for Windows 11.
 - 🔑 **Universal HWND Access** — Provides a clean 64-bit native HWND handle for Vulkan, DirectX, and DWM composition engines.
+
+---
+
+## Technical Examples & Hero Demos
+
+| Case | Java Example | Launcher | Description |
+|---|---|---|---|
+| **Native Black Window & Theme Demo** | [Demo.java](examples/Demo/src/main/java/fastwindow/Demo.java) | `run-demo.bat` | Standalone native Win32 window with Dark Mode, black titlebar, dynamic FPS title, and round icon. |
+| **JMH Throughput Benchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastwindow/benchmark/Benchmark.java) | `run-benchmark.bat` | High-frequency message pump and native call benchmarking. |
 
 ---
 
