@@ -212,9 +212,10 @@ Download the latest JARs directly to add them to your classpath:
 ## Platform Support
 
 | Platform | Status |
-|---------------------|-----------------------------------|
+|---|---|
 | Windows 10/11 (x64) | ✅ Fully Supported |
-| Linux / macOS | ❌ Not Planned (Win32-specific) |
+| Linux (X11 / Wayland) | 🚧 Planned |
+| macOS (Cocoa / Metal) | 🚧 Planned |
 
 ---
 
