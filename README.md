@@ -50,10 +50,10 @@ public class NativeExample {
 - [Why FastWindow?](#why-fastwindow)
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
+- [Performance Benchmarks](#performance-benchmarks)
+- [API Quick Reference](#api-quick-reference)
 - [Technical Examples & Hero Demos](#technical-examples--hero-demos)
-- [Performance & Benchmarks](#performance--benchmarks)
 - [Installation](#installation)
-- [API Reference](#api-reference)
 - [Documentation](#documentation)
 - [Platform Support](#platform-support)
 - [License](#license)
@@ -84,15 +84,6 @@ Standard Java windows (`JFrame`, `Frame`) on Windows suffer from significant nat
 
 ---
 
-## Technical Examples & Hero Demos
-
-| Case | Java Example | Launcher | Description |
-|---|---|---|---|
-| **Native Black Window & Theme Demo** | [Demo.java](examples/Demo/src/main/java/fastwindow/Demo.java) | `run-demo.bat` | Standalone native Win32 window with Dark Mode, black titlebar, dynamic FPS title, and round icon. |
-| **JMH Throughput Benchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastwindow/benchmark/Benchmark.java) | `run-benchmark.bat` | High-frequency message pump and native call benchmarking. |
-
----
-
 ## Performance Benchmarks
 
 FastWindow is rigorously profiled using **JMH** (Java Microbenchmark Harness) to guarantee zero-overhead event polling and native Win32 dispatching.
@@ -105,6 +96,35 @@ FastWindow is rigorously profiled using **JMH** (Java Microbenchmark Harness) to
 | **Bounds Dispatch (`setBounds`)** | **~118 ops/ms** | **> 118,000** | **~8.4 µs (Win32 API)** |
 
 *Measured on Windows 11 (x64), Intel Core i5 / AMD Ryzen, OpenJDK 21.0.12 LTS. FastWindow executes standalone native message pumping without AWT event loop contention.*
+
+---
+
+## API Quick Reference
+
+| Method | Description |
+|-----------------------------------------------|-----------------------------------------------------|
+| `static FastNativeWindow create(title, w, h)` | Creates a standalone native Win32 window (Vulkan/DirectX target). |
+| `long getHWND()` | Returns the 64-bit native window handle (HWND). |
+| `boolean pollEvents()` | Pumps native Win32 message loop (`PeekMessageW`/`DispatchMessageW`). |
+| `void setTitle(String title)` | Updates native window title with dynamic UTF-16 Unicode text. |
+| `void setVisible(boolean visible)` | Shows (`SW_SHOW`) or hides the native window. |
+| `void setIconImage(BufferedImage img)` | Sets the native 32-bit ARGB title bar and taskbar icon. |
+| `void setFullscreen(boolean fullscreen)` | Toggles borderless exclusive fullscreen mode. |
+| `void setMinimumSize(minW, minH)` | Sets kernel-level min track size via `WM_GETMINMAXINFO`. |
+| `void setMaximumSize(maxW, maxH)` | Sets kernel-level max track size via `WM_GETMINMAXINFO`. |
+| `void setResizable(boolean resizable)` | Toggles `WS_THICKFRAME` and `WS_MAXIMIZEBOX` styles. |
+| `void setAlwaysOnTop(boolean alwaysOnTop)` | Sets `HWND_TOPMOST` window order. |
+| `void centerOnScreen()` | Centers the window on the active monitor. |
+| `void close()` | Destroys the window handle and frees native context. |
+
+---
+
+## Technical Examples & Hero Demos
+
+| Case | Java Example | Launcher | Description |
+|---|---|---|---|
+| **Native Black Window & Theme Demo** | [Demo.java](examples/Demo/src/main/java/fastwindow/Demo.java) | `run-demo.bat` | Standalone native Win32 window with Dark Mode, black titlebar, dynamic FPS title, and round icon. |
+| **JMH Throughput Benchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastwindow/benchmark/Benchmark.java) | `run-benchmark.bat` | High-frequency message pump and native call benchmarking. |
 
 ---
 
