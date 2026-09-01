@@ -24,7 +24,3 @@ EXPORTS
     Java_fastwindow_FastNativeWindow_nSetMinSize
     Java_fastwindow_FastNativeWindow_nSetMaxSize
     Java_fastwindow_FastNativeWindow_nSetIcon
-    Java_fastwindow_FastWindowImpl_nGetHWND
-    Java_fastwindow_FastWindowImpl_nSetConstraints
-    Java_fastwindow_FastWindowImpl_nSetMaximizable
-    Java_fastwindow_FastWindowImpl_nSetBackgroundColor

@@ -2,23 +2,19 @@
  * @file fastwindow.cpp
  * @brief Native Windows Window Engine for Java (FastWindow).
  * 
- * Implements:
- * 1. Pure standalone Win32 Native Windows (FastNativeWindow / FastWindow.create)
- * 2. Legacy AWT/Swing Subclassing (FastWindow.attach)
+ * Implements pure standalone Win32 Native Windows specifically designed
+ * as the window foundation for FastVulkan, FastGraphics, DirectX and DWM.
  * 
  * @author FastJava Team
- * @version 0.2.0
+ * @version 0.1.1
  */
 
 #include <jni.h>
-#include <jawt_md.h>
 #include <windows.h>
-#include <map>
 #include <vector>
 #include <string>
 #include <algorithm>
 
-#pragma comment(lib, "jawt.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "dwmapi.lib")
@@ -89,61 +85,9 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
 }
 
 // -------------------------------------------------------------
-// Legacy AWT Subclassing State
-// -------------------------------------------------------------
-struct SubclassState {
-    WNDPROC originalWndProc;
-    int minW, minH;
-    int maxW, maxH;
-    int bgR, bgG, bgB;
-};
-
-static std::map<HWND, SubclassState> g_subclassedWindows;
-
-static LRESULT CALLBACK LegacySubclassWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    auto it = g_subclassedWindows.find(hwnd);
-    if (it == g_subclassedWindows.end()) return DefWindowProcW(hwnd, msg, wParam, lParam);
-
-    SubclassState& state = it->second;
-
-    switch (msg) {
-    case WM_GETMINMAXINFO: {
-        MINMAXINFO* mmi = (MINMAXINFO*)lParam;
-        if (state.minW > 0) mmi->ptMinTrackSize.x = state.minW;
-        if (state.minH > 0) mmi->ptMinTrackSize.y = state.minH;
-        if (state.maxW > 0) mmi->ptMaxTrackSize.x = state.maxW;
-        if (state.maxH > 0) mmi->ptMaxTrackSize.y = state.maxH;
-        return 0;
-    }
-    case WM_ERASEBKGND: {
-        HDC hdc = (HDC)wParam;
-        RECT rect;
-        GetClientRect(hwnd, &rect);
-        HBRUSH brush = CreateSolidBrush(RGB(state.bgR, state.bgG, state.bgB));
-        FillRect(hdc, &rect, brush);
-        DeleteObject(brush);
-        return 1;
-    }
-    case WM_SIZE: {
-        RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-        break;
-    }
-    case WM_DESTROY: {
-        SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)state.originalWndProc);
-        g_subclassedWindows.erase(hwnd);
-        break;
-    }
-    }
-
-    return CallWindowProc(state.originalWndProc, hwnd, msg, wParam, lParam);
-}
-
-// -------------------------------------------------------------
 // JNI Exports
 // -------------------------------------------------------------
 extern "C" {
-
-// --- Standalone Pure Window Native Exports ---
 
 JNIEXPORT jlong JNICALL Java_fastwindow_FastNativeWindow_nCreateWindow(
     JNIEnv* env, jclass clazz, jstring title, jint width, jint height) {
@@ -489,55 +433,6 @@ JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetIcon(
         DeleteObject(hMonoMask);
     }
     env->ReleaseIntArrayElements(pixels, rawPixels, JNI_ABORT);
-}
-
-// --- Legacy AWT Subclassing Native Exports ---
-
-JNIEXPORT jlong JNICALL Java_fastwindow_FastWindowImpl_nGetHWND(JNIEnv* env, jobject obj, jobject component) {
-    JAWT awt;
-    awt.version = JAWT_VERSION_1_7;
-    if (JAWT_GetAWT(env, &awt) == JNI_FALSE) return 0;
-
-    JAWT_DrawingSurface* ds = awt.GetDrawingSurface(env, component);
-    if (!ds) return 0;
-    ds->Lock(ds);
-    JAWT_DrawingSurfaceInfo* dsi = ds->GetDrawingSurfaceInfo(ds);
-    HWND hwnd = ((JAWT_Win32DrawingSurfaceInfo*)dsi->platformInfo)->hwnd;
-    ds->FreeDrawingSurfaceInfo(dsi);
-    ds->Unlock(ds);
-    awt.FreeDrawingSurface(ds);
-    return (jlong)hwnd;
-}
-
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetConstraints(JNIEnv* env, jobject obj, jlong hwnd, jint minW, jint minH, jint maxW, jint maxH) {
-    HWND h = (HWND)hwnd;
-    if (g_subclassedWindows.find(h) == g_subclassedWindows.end()) {
-        WNDPROC oldProc = (WNDPROC)SetWindowLongPtr(h, GWLP_WNDPROC, (LONG_PTR)LegacySubclassWndProc);
-        LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
-        SetWindowLongPtr(h, GWL_STYLE, style | WS_CLIPCHILDREN);
-        g_subclassedWindows[h] = { oldProc, minW, minH, maxW, maxH, 30, 30, 30 };
-    } else {
-        g_subclassedWindows[h].minW = minW;
-        g_subclassedWindows[h].minH = minH;
-        g_subclassedWindows[h].maxW = maxW;
-        g_subclassedWindows[h].maxH = maxH;
-    }
-}
-
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetMaximizable(JNIEnv* env, jobject obj, jlong hwnd, jboolean enabled) {
-    HWND h = (HWND)hwnd;
-    LONG_PTR style = GetWindowLongPtr(h, GWL_STYLE);
-    if (enabled) style |= WS_MAXIMIZEBOX;
-    else style &= ~WS_MAXIMIZEBOX;
-    SetWindowLongPtr(h, GWL_STYLE, style);
-    SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-}
-
-JNIEXPORT void JNICALL Java_fastwindow_FastWindowImpl_nSetBackgroundColor(JNIEnv* env, jobject obj, jlong hwnd, jint r, jint g, jint b) {
-    HWND h = (HWND)hwnd;
-    if (g_subclassedWindows.find(h) != g_subclassedWindows.end()) {
-        g_subclassedWindows[h].bgR = r; g_subclassedWindows[h].bgG = g; g_subclassedWindows[h].bgB = b;
-    }
 }
 
 } // extern "C"

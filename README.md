@@ -6,19 +6,15 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe/FastWindow)
 
-**⚡ High-performance Win32 native window engine and AWT/Swing turbocharger for Vulkan, DirectX, DWM and Java applications.**
+**⚡ Ultra-high performance Win32 native window engine specifically designed as the core windowing foundation for FastVulkan, FastGraphics, DirectX and hardware-accelerated composition pipelines.**
 
-FastWindow provides ultra-high performance native window creation and management for the FastJava ecosystem. It offers two powerful modes:
-1. **Pure Standalone Win32 Windows (`FastWindow.create`)**: Ultra-lightweight, zero-overhead standalone native windows directly rendering via Vulkan, DirectX, or DWM composition.
-2. **Native Shell for AWT/Swing (`FastWindow.attach`)**: Subclasses existing Java frames for kernel-level geometry constraints and flicker-free resizing.
+FastWindow provides zero-overhead, kernel-direct Win32 native window creation (`FastWindow.create(...)`), bypassing Java AWT/Swing entirely. It guarantees flicker-free resizing, seamless Dark Mode and DWM styling, dynamic Unicode titling, and clean HWND lifecycle management.
 
 [![FastWindow Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
 ---
 
-## Quick Start
-
-### 1. Pure Standalone Native Window (Recommended for Vulkan/DirectX)
+## Quick Start (Vulkan & GPU Window Engine)
 
 ```java
 import fastwindow.FastNativeWindow;
@@ -27,38 +23,22 @@ import fasttheme.FastTheme;
 
 public class NativeExample {
     public static void main(String[] args) {
-        try (FastNativeWindow window = FastWindow.create("FastWindow — Native Engine", 1024, 600)) {
+        try (FastNativeWindow window = FastWindow.create("FastWindow — Native Engine for FastVulkan", 1024, 600)) {
             long hwnd = window.getHWND();
             
             // Dark Mode & Black Titlebar via FastTheme
             FastTheme.setTitleBarDarkMode(hwnd, true);
             FastTheme.setTitleBarColor(hwnd, 20, 20, 20);
+            FastTheme.setTitleBarTextColor(hwnd, 240, 240, 240);
             FastTheme.setCornerStyle(hwnd, 2); // Windows 11 Rounded Corners
             
+            // Show window seamlessly once styled
             window.setVisible(true);
 
             while (window.pollEvents()) {
-                // Render Vulkan / DirectX frame...
+                // Pass hwnd to FastVulkan / GPU presentation loop...
             }
         }
-    }
-}
-```
-
-### 2. Supercharging Existing Swing / AWT Windows
-
-```java
-import fastwindow.FastWindow;
-import javax.swing.JFrame;
-
-public class SwingExample {
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("FastWindow Demo");
-        frame.addNotify(); // Create native peer WITHOUT showing yet
-        FastWindow win = FastWindow.attach(frame);
-        win.setConstraints(400, 300, 1500, 960);
-        win.setBackgroundColor(30, 30, 30); // Eliminate resize flicker
-        frame.setVisible(true); // Appears already constrained and stable!
     }
 }
 ```
@@ -145,13 +125,18 @@ dependencies {
 | Method | Description |
 |-----------------------------------------------|-----------------------------------------------------|
 | `static FastNativeWindow create(title, w, h)` | Creates a standalone native Win32 window (Vulkan/DirectX target). |
-| `static FastWindow attach(Component c)` | Attaches the native engine to an existing Java Swing/AWT window. |
-| `void setConstraints(minW, minH, maxW, maxH)` | Enforces kernel-level size limits via `WM_GETMINMAXINFO`. |
-| `void setMaximizable(boolean)` | Enables/Disables the native maximize button. |
-| `void setBackgroundColor(r, g, b)` | Syncs native background erase to your UI color. |
-| `void setIconImage(BufferedImage img)` | Sets the native title bar and taskbar icon. |
-| `void setFullscreen(boolean)` | Toggles borderless exclusive fullscreen mode. |
 | `long getHWND()` | Returns the 64-bit native window handle (HWND). |
+| `boolean pollEvents()` | Pumps native Win32 message loop (`PeekMessageW`/`DispatchMessageW`). |
+| `void setTitle(String title)` | Updates native window title with dynamic UTF-16 Unicode text. |
+| `void setVisible(boolean visible)` | Shows (`SW_SHOW`) or hides the native window. |
+| `void setIconImage(BufferedImage img)` | Sets the native 32-bit ARGB title bar and taskbar icon. |
+| `void setFullscreen(boolean fullscreen)` | Toggles borderless exclusive fullscreen mode. |
+| `void setMinimumSize(minW, minH)` | Sets kernel-level min track size via `WM_GETMINMAXINFO`. |
+| `void setMaximumSize(maxW, maxH)` | Sets kernel-level max track size via `WM_GETMINMAXINFO`. |
+| `void setResizable(boolean resizable)` | Toggles `WS_THICKFRAME` and `WS_MAXIMIZEBOX` styles. |
+| `void setAlwaysOnTop(boolean alwaysOnTop)` | Sets `HWND_TOPMOST` window order. |
+| `void centerOnScreen()` | Centers the window on the active monitor. |
+| `void close()` | Destroys the window handle and frees native context. |
 
 ---
 
