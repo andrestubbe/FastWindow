@@ -6,11 +6,11 @@
 
     <groupId>com.github.andrestubbe</groupId>
     <artifactId>FastWindow</artifactId>
-    <version>0.2.0</version>
+    <version>0.1.1</version>
     <packaging>jar</packaging>
 
     <name>FastWindow</name>
-    <description>Native Windows Window Engine for Java</description>
+    <description>Ultra-Fast Win32 Native Window Engine for Java, Vulkan, DirectX and DWM</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

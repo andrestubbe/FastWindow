@@ -1,10 +1,9 @@
 package fastwindow.benchmark;
 
+import fastwindow.FastNativeWindow;
 import fastwindow.FastWindow;
 import org.openjdk.jmh.annotations.*;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -15,43 +14,38 @@ import java.util.concurrent.TimeUnit;
 @Fork(1)
 public class Benchmark {
 
-    private JFrame frame;
-    private FastWindow fastWindow;
+    private FastNativeWindow nativeWindow;
 
     @Setup
-    public void setup() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            frame = new JFrame("FastWindow Benchmark");
-            frame.setSize(800, 600);
-            frame.setVisible(true);
-        });
-        try {
-            fastWindow = FastWindow.attach(frame);
-        } catch (Exception e) {
-            fastWindow = null;
-        }
+    public void setup() {
+        nativeWindow = FastWindow.create("FastWindow JMH Benchmark", 800, 600);
     }
 
     @TearDown
-    public void tearDown() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            if (frame != null) {
-                frame.dispose();
-            }
-        });
+    public void tearDown() {
+        if (nativeWindow != null) {
+            nativeWindow.close();
+        }
+    }
+
+    @org.openjdk.jmh.annotations.Benchmark
+    public boolean benchmarkPollEvents() {
+        return nativeWindow.pollEvents();
+    }
+
+    @org.openjdk.jmh.annotations.Benchmark
+    public void benchmarkSetTitle() {
+        nativeWindow.setTitle("FastWindow Benchmark Title");
+    }
+
+    @org.openjdk.jmh.annotations.Benchmark
+    public void benchmarkSetBounds() {
+        nativeWindow.setBounds(100, 100, 800, 600);
     }
 
     @org.openjdk.jmh.annotations.Benchmark
     public void benchmarkSetConstraints() {
-        if (fastWindow != null) {
-            fastWindow.setConstraints(400, 300, 1200, 800);
-        }
-    }
-
-    @org.openjdk.jmh.annotations.Benchmark
-    public void benchmarkSetBackgroundColor() {
-        if (fastWindow != null) {
-            fastWindow.setBackgroundColor(30, 30, 30);
-        }
+        nativeWindow.setMinimumSize(400, 300);
+        nativeWindow.setMaximumSize(1200, 800);
     }
 }

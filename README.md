@@ -1,15 +1,15 @@
-# FastWindow 0.2.0 — Native Windows Window Engine for Java
+# FastWindow 0.1.1 — Ultra-Fast Win32 Native Window Engine for Java
 
-[![Status](https://img.shields.io/badge/status-0.2.0-brightgreen.svg)](https://github.com/andrestubbe/FastWindow/releases/tag/0.2.0)
+[![Status](https://img.shields.io/badge/status-0.1.1-brightgreen.svg)](https://github.com/andrestubbe/FastWindow/releases/tag/0.1.1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17+-blue.svg)](https://www.java.com)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe/FastWindow)
 
-**⚡ High-performance Win32 native window engine and AWT/Swing turbocharger for Java applications.**
+**⚡ High-performance Win32 native window engine and AWT/Swing turbocharger for Vulkan, DirectX, DWM and Java applications.**
 
 FastWindow provides ultra-high performance native window creation and management for the FastJava ecosystem. It offers two powerful modes:
-1. **Pure Native Win32 Windows (`FastWindow.create`)**: Ultra-lightweight, zero-overhead standalone native windows directly rendering via Vulkan/DirectX/DWM.
+1. **Pure Standalone Win32 Windows (`FastWindow.create`)**: Ultra-lightweight, zero-overhead standalone native windows directly rendering via Vulkan, DirectX, or DWM composition.
 2. **Native Shell for AWT/Swing (`FastWindow.attach`)**: Subclasses existing Java frames for kernel-level geometry constraints and flicker-free resizing.
 
 [![FastWindow Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
@@ -38,7 +38,7 @@ public class NativeExample {
             window.setVisible(true);
 
             while (window.pollEvents()) {
-                // Render frame...
+                // Render Vulkan / DirectX frame...
             }
         }
     }
@@ -67,7 +67,8 @@ public class SwingExample {
 
 ## Key Features
 
-- 🪟 **Pure Standalone Win32 Windows** — Zero-overhead native windows with Unicode titlebars, fullscreen, centering, and icon support.
+- 🪟 **Pure Standalone Win32 Windows** — Zero-overhead native windows with direct UTF-16 Unicode titlebars, fullscreen, centering, and icon support.
+- 🌋 **First-Class Vulkan & DirectX Support** — Clean HWND handle lifecycle designed for surface creation and zero-jitter live resizing.
 - ⚡ **Zero-Jitter Live Resize** — Hardware-synced message pump with immediate bounds dispatching.
 - 📏 **Kernel-Level Constraints** — Enforces hard Min/Max window sizes directly in the Windows kernel via `WM_GETMINMAXINFO`.
 - 🎨 **DWM & FastTheme Harmony** — Native Dark Mode, title bar coloring, and rounded corners for Windows 11.
@@ -84,7 +85,6 @@ public class SwingExample {
 | Boundary Jitter | **None** (Kernel Level) | High (Event Level) | **Butter Smooth** |
 
 ---
-
 
 ## Installation
 
@@ -105,7 +105,7 @@ Add the JitPack repository and the dependencies to your `pom.xml`:
     <dependency>
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>FastWindow</artifactId>
-        <version>0.1.0</version>
+        <version>0.1.1</version>
     </dependency>
 
     <!-- FastCore (Required Native Loader) -->
@@ -113,6 +113,13 @@ Add the JitPack repository and the dependencies to your `pom.xml`:
         <groupId>com.github.andrestubbe</groupId>
         <artifactId>FastCore</artifactId>
         <version>0.1.0</version>
+    </dependency>
+
+    <!-- FastTheme (Optional Styling) -->
+    <dependency>
+        <groupId>com.github.andrestubbe</groupId>
+        <artifactId>FastTheme</artifactId>
+        <version>0.1.4</version>
     </dependency>
 </dependencies>
 ```
@@ -125,20 +132,11 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.andrestubbe:FastWindow:0.1.0'
+    implementation 'com.github.andrestubbe:FastWindow:0.1.1'
     implementation 'com.github.andrestubbe:FastCore:0.1.0'
+    implementation 'com.github.andrestubbe:FastTheme:0.1.4'
 }
 ```
-
-### Option 3: Direct Download (No Build Tool)
-
-Download the latest JARs directly to add them to your classpath:
-
-1. 📦 **[fastwindow-0.1.0.jar](https://github.com/andrestubbe/FastWindow/releases/download/0.1.0/fastwindow-0.1.0.jar)** (The Core Library)
-2. ⚙️ **[fastcore-0.1.0.jar](https://github.com/andrestubbe/FastCore/releases/download/0.1.0/fastcore-0.1.0.jar)** (The Mandatory Native Loader)
-
-> [!IMPORTANT]
-> All JARs must be in your classpath for the native JNI calls to function correctly.
 
 ---
 
@@ -146,11 +144,14 @@ Download the latest JARs directly to add them to your classpath:
 
 | Method | Description |
 |-----------------------------------------------|-----------------------------------------------------|
-| `static FastWindow attach(Component c)` | Attaches the native engine to a Java window/canvas. |
-| `void setConstraints(minW, minH, maxW, maxH)` | Enforces kernel-level size limits. |
+| `static FastNativeWindow create(title, w, h)` | Creates a standalone native Win32 window (Vulkan/DirectX target). |
+| `static FastWindow attach(Component c)` | Attaches the native engine to an existing Java Swing/AWT window. |
+| `void setConstraints(minW, minH, maxW, maxH)` | Enforces kernel-level size limits via `WM_GETMINMAXINFO`. |
 | `void setMaximizable(boolean)` | Enables/Disables the native maximize button. |
 | `void setBackgroundColor(r, g, b)` | Syncs native background erase to your UI color. |
-| `long getHWND()` | Returns the native window handle (HWND). |
+| `void setIconImage(BufferedImage img)` | Sets the native title bar and taskbar icon. |
+| `void setFullscreen(boolean)` | Toggles borderless exclusive fullscreen mode. |
+| `long getHWND()` | Returns the 64-bit native window handle (HWND). |
 
 ---
 
@@ -176,7 +177,6 @@ Download the latest JARs directly to add them to your classpath:
 
 MIT License — See [LICENSE](LICENSE) file for details.
 
----
 
 ## Related Projects
 
