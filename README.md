@@ -10,6 +10,8 @@
 
 FastWindow provides zero-overhead, kernel-direct Win32 native window creation (`FastWindow.create(...)`), bypassing Java AWT/Swing entirely. It guarantees flicker-free resizing, seamless Dark Mode and DWM styling, dynamic Unicode titling, and clean HWND lifecycle management.
 
+Watch Demo (YouTube) | Watch JMH Benchmark (YouTube)
+
 [![FastWindow Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
 ---
