@@ -6,11 +6,13 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010+-lightgrey.svg)]()
 [![JitPack](https://img.shields.io/badge/JitPack-ready-green.svg)](https://jitpack.io/#andrestubbe/FastWindow)
 
+---
+
 **⚡ Ultra-high performance Win32 native window engine specifically designed as the core windowing foundation for FastVulkan, FastGraphics, DirectX and hardware-accelerated composition pipelines.**
 
 FastWindow provides zero-overhead, kernel-direct Win32 native window creation (`FastWindow.create(...)`), bypassing Java AWT/Swing entirely. It guarantees flicker-free resizing, seamless Dark Mode and DWM styling, dynamic Unicode titling, and clean HWND lifecycle management.
 
-Watch Demo (YouTube) | Watch JMH Benchmark (YouTube)
+[**Watch the Demo**](https://www.youtube.com/watch?v=BZsqQl7WqWk) | Watch JMH Benchmark (YouTube)
 
 [![FastWindow Showcase](docs/screenshot.png)](https://www.youtube.com/watch?v=BZsqQl7WqWk)
 
@@ -49,18 +51,18 @@ public class NativeExample {
 
 ## Table of Contents
 
-- [Why FastWindow?](#why-fastwindow)
 - [Quick Start](#quick-start)
+- [Why FastWindow?](#why-fastwindow)
 - [Key Features](#key-features)
-- [Real-World Scenarios](#real-world-scenarios)
+- [Real-World Use Cases](#real-world-use-cases)
 - [Performance Benchmarks](#performance-benchmarks)
 - [API Quick Reference](#api-quick-reference)
-- [Technical Examples & Hero Demos](#technical-examples--hero-demos)
+- [Technical Demos & Benchmarks](#technical-demos--benchmarks)
 - [Installation](#installation)
 - [Documentation](#documentation)
 - [Platform Support](#platform-support)
-- [License](#license)
 - [Related Projects](#related-projects)
+- [License](#license)
 
 ---
 
@@ -87,7 +89,7 @@ Standard Java windows (`JFrame`, `Frame`) on Windows suffer from significant nat
 
 ---
 
-## Real-World Scenarios
+## Real-World Use Cases
 
 - 🌋 **High-FPS Vulkan Rendering** — Dedicated native window surface lifecycle for `vkCreateWin32SurfaceKHR` without AWT peer synchronization lags.
 - 🎮 **Game Engines & Real-Time Simulators** — Microsecond message pump with `pollEvents()` delivering zero-allocation game loops exceeding 1,000+ FPS.
@@ -113,30 +115,28 @@ FastWindow is rigorously profiled using **JMH** (Java Microbenchmark Harness) to
 
 ## API Quick Reference
 
-| Method | Description |
-|-----------------------------------------------|-----------------------------------------------------|
-| `static FastNativeWindow create(title, w, h)` | Creates a standalone native Win32 window (Vulkan/DirectX target). |
-| `long getHWND()` | Returns the 64-bit native window handle (HWND). |
-| `boolean pollEvents()` | Pumps native Win32 message loop (`PeekMessageW`/`DispatchMessageW`). |
-| `void setTitle(String title)` | Updates native window title with dynamic UTF-16 Unicode text. |
-| `void setVisible(boolean visible)` | Shows (`SW_SHOW`) or hides the native window. |
-| `void setIconImage(BufferedImage img)` | Sets the native 32-bit ARGB title bar and taskbar icon. |
-| `void setFullscreen(boolean fullscreen)` | Toggles borderless exclusive fullscreen mode. |
-| `void setMinimumSize(minW, minH)` | Sets kernel-level min track size via `WM_GETMINMAXINFO`. |
-| `void setMaximumSize(maxW, maxH)` | Sets kernel-level max track size via `WM_GETMINMAXINFO`. |
-| `void setResizable(boolean resizable)` | Toggles `WS_THICKFRAME` and `WS_MAXIMIZEBOX` styles. |
-| `void setAlwaysOnTop(boolean alwaysOnTop)` | Sets `HWND_TOPMOST` window order. |
-| `void centerOnScreen()` | Centers the window on the active monitor. |
-| `void close()` | Destroys the window handle and frees native context. |
+| Method | Return Type | Description | Docs |
+|---|---|---|---|
+| `FastWindow.create(title, w, h)` | `FastNativeWindow` | Creates a standalone native Win32 window context. | [Reference](docs/REFERENCE.md#class-fastwindowfastwindow) |
+| `getHWND()` | `long` | Returns the raw 64-bit native window handle (HWND). | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `pollEvents()` | `boolean` | Pumps native Win32 message loop (`PeekMessageW`). | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setTitle(String title)` | `void` | Updates native window title with UTF-16 Unicode text. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setVisible(boolean visible)` | `void` | Shows (`SW_SHOW`) or hides the native window. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setBounds(x, y, w, h)` | `void` | Updates window position and size simultaneously. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setMinimumSize(minW, minH)` | `void` | Sets kernel-level min tracking size via `WM_GETMINMAXINFO`. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setMaximumSize(maxW, maxH)` | `void` | Sets kernel-level max tracking size via `WM_GETMINMAXINFO`. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setFullscreen(boolean fs)` | `void` | Toggles borderless exclusive fullscreen mode. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `setIconImage(BufferedImage img)` | `void` | Sets the native 32-bit ARGB title bar and taskbar icon. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
+| `close()` | `void` | Destroys the window handle and frees unmanaged resources. | [Reference](docs/REFERENCE.md#class-fastwindowfastnativewindow) |
 
 ---
 
-## Technical Examples & Hero Demos
+## Technical Demos & Benchmarks
 
 | Case | Java Example | Launcher | Description |
 |---|---|---|---|
 | **Native Black Window & Theme Demo** | [Demo.java](examples/Demo/src/main/java/fastwindow/Demo.java) | `run-demo.bat` | Standalone native Win32 window with Dark Mode, black titlebar, dynamic FPS title, and round icon. |
-| **JMH Throughput Benchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastwindow/benchmark/Benchmark.java) | `run-benchmark.bat` | High-frequency message pump and native call benchmarking. |
+| **JMH Microbenchmark Suite** | [Benchmark.java](examples/Benchmark/src/main/java/fastwindow/benchmark/Benchmark.java) | `run-benchmark.bat` | High-frequency message pump and native call throughput benchmarking. |
 
 ---
 
@@ -204,10 +204,10 @@ Download the latest JARs directly to add them to your classpath:
 
 ## Documentation
 
-* **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
-* **[REFERENCE.md](docs/REFERENCE.md)**: Full API descriptions and method reference.
-* **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for zero-allocation performance.
-* **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
+- **[COMPILE.md](docs/COMPILE.md)**: Full compilation guide (MSVC C++17 build chain + JNI Setup).
+- **[REFERENCE.md](docs/REFERENCE.md)**: Full API descriptions and method reference.
+- **[PHILOSOPHY.md](docs/PHILOSOPHY.md)**: The engineering rationale for zero-allocation performance.
+- **[ROADMAP.md](docs/ROADMAP.md)**: Future milestones and planned features.
 
 ---
 
@@ -221,17 +221,17 @@ Download the latest JARs directly to add them to your classpath:
 
 ---
 
+## Related Projects
+
+- **[`FastCore`](https://github.com/andrestubbe/FastCore)** — Native Library Loader for Java
+- **[`FastTheme`](https://github.com/andrestubbe/FastTheme)** — Advanced UI Styling Engine (DWM/Mica/Acrylic)
+- **[`FastUI`](https://github.com/andrestubbe/FastUI)** — High-Performance Retained-Mode UI Framework
+
+---
+
 ## License
 
 MIT License — See [LICENSE](LICENSE) file for details.
 
 ---
-
-## Related Projects
-
-- [FastCore](https://github.com/andrestubbe/FastCore) — Native Library Loader for Java
-- [FastTheme](https://github.com/andrestubbe/FastTheme) — Advanced UI Styling Engine (DWM/Mica/Acrylic)
-- [FastUI](https://github.com/andrestubbe/FastUI) — High-Performance Retained-Mode UI Framework
-
----
-**Part of the FastJava Ecosystem** — *Making the JVM faster. ⚡*
+**Part of the FastJava Ecosystem** — *Making the JVM faster.* 🚀
