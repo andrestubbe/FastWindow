@@ -213,11 +213,11 @@ Download the latest JARs directly to add them to your classpath:
 
 ## Platform Support
 
-| Platform | Status |
-|---|---|
-| Windows 10/11 (x64) | ✅ Fully Supported |
-| Linux (X11 / Wayland) | 🚧 Planned |
-| macOS (Cocoa / Metal) | 🚧 Planned |
+| Platform | Architecture | Status | Driver / Subsystem |
+|:---|:---:|:---:|:---|
+| **Windows 10 / 11** | x64 | ✅ Fully Supported | Native Win32 Subclassing & DirectComposition |
+| **Linux** | x64 / AArch64 | 🚧 Planned | X11 (`Xlib`/`xcb`) & Wayland `xdg-shell` |
+| **macOS** | Apple Silicon / x64 | 🚧 Planned | Cocoa `NSWindow` & Metal Layer Hosting |
 
 ---
 
