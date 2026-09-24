@@ -39,14 +39,20 @@ struct StandaloneWindowContext {
     jobject javaObj = nullptr;
     jmethodID paintMethod = nullptr;
     bool paintEnabled = false;
+    bool paintInProgress = false;
+    HICON hIcon = nullptr;
 
     void triggerPaint(int w, int h) {
-        if (!paintEnabled || !jvm || !javaObj || !paintMethod || w <= 0 || h <= 0) return;
+        if (!paintEnabled || paintInProgress || !jvm || !javaObj || !paintMethod || w <= 0 || h <= 0) return;
+        paintInProgress = true;
         JNIEnv* env = nullptr;
         bool attached = false;
         if (jvm->GetEnv((void**)&env, JNI_VERSION_1_8) != JNI_OK) {
-            jvm->AttachCurrentThread((void**)&env, nullptr);
-            attached = true;
+            if (jvm->AttachCurrentThread((void**)&env, nullptr) == JNI_OK) {
+                attached = true;
+            } else {
+                env = nullptr;
+            }
         }
         if (env) {
             env->CallVoidMethod(javaObj, paintMethod, (jint)w, (jint)h);
@@ -58,6 +64,7 @@ struct StandaloneWindowContext {
         if (attached) {
             jvm->DetachCurrentThread();
         }
+        paintInProgress = false;
     }
 };
 
@@ -183,6 +190,10 @@ JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nDestroyWindow(
         auto ctx = (StandaloneWindowContext*)handle;
         if (ctx->hwnd) {
             DestroyWindow(ctx->hwnd);
+        }
+        if (ctx->hIcon) {
+            DestroyIcon(ctx->hIcon);
+            ctx->hIcon = nullptr;
         }
         if (ctx->javaObj) {
             env->DeleteGlobalRef(ctx->javaObj);
@@ -483,6 +494,10 @@ JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetIcon(
 
         HICON hIcon = CreateIconIndirect(&ii);
         if (hIcon) {
+            if (ctx->hIcon) {
+                DestroyIcon(ctx->hIcon);
+            }
+            ctx->hIcon = hIcon;
             SendMessageW(ctx->hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
             SendMessageW(ctx->hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
         }
