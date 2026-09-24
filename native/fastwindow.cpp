@@ -34,6 +34,27 @@ struct StandaloneWindowContext {
     int minWidth = 0, minHeight = 0;
     int maxWidth = 0, maxHeight = 0;
     int width = 0, height = 0;
+
+    JavaVM* jvm = nullptr;
+    jobject javaObj = nullptr;
+    jmethodID paintMethod = nullptr;
+    bool paintEnabled = false;
+
+    void triggerPaint(int w, int h) {
+        if (!paintEnabled || !jvm || !javaObj || !paintMethod || w <= 0 || h <= 0) return;
+        JNIEnv* env = nullptr;
+        bool attached = false;
+        if (jvm->GetEnv((void**)&env, JNI_VERSION_1_8) != JNI_OK) {
+            jvm->AttachCurrentThread((void**)&env, nullptr);
+            attached = true;
+        }
+        if (env) {
+            env->CallVoidMethod(javaObj, paintMethod, (jint)w, (jint)h);
+        }
+        if (attached) {
+            jvm->DetachCurrentThread();
+        }
+    }
 };
 
 // -------------------------------------------------------------
@@ -43,22 +64,17 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
     auto ctx = (StandaloneWindowContext*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 
     switch (uMsg) {
-    case WM_ERASEBKGND: {
-        HDC hdc = (HDC)wParam;
-        RECT rc;
-        GetClientRect(hwnd, &rc);
-        HBRUSH brush = (HBRUSH)GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND);
-        if (!brush) brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
-        FillRect(hdc, &rc, brush);
+    case WM_ERASEBKGND:
         return 1;
-    }
 
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        HBRUSH brush = (HBRUSH)GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND);
-        if (!brush) brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
-        FillRect(hdc, &ps.rcPaint, brush);
+        if (ctx) {
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            ctx->triggerPaint(rc.right - rc.left, rc.bottom - rc.top);
+        }
         EndPaint(hwnd, &ps);
         return 0;
     }
@@ -68,14 +84,11 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
             ctx->resized = true;
             ctx->width = LOWORD(lParam);
             ctx->height = HIWORD(lParam);
+            ctx->triggerPaint(ctx->width, ctx->height);
         }
         return 0;
 
-    case WM_SIZING:
-        if (ctx) {
-            ctx->resized = true;
-        }
-        return 0;
+
 
     case WM_GETMINMAXINFO:
         if (ctx) {
@@ -166,7 +179,29 @@ JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nDestroyWindow(
         if (ctx->hwnd) {
             DestroyWindow(ctx->hwnd);
         }
+        if (ctx->javaObj) {
+            env->DeleteGlobalRef(ctx->javaObj);
+            ctx->javaObj = nullptr;
+        }
         delete ctx;
+    }
+}
+
+JNIEXPORT void JNICALL Java_fastwindow_FastNativeWindow_nSetPaintCallbackEnabled(
+    JNIEnv* env, jobject obj, jlong handle, jboolean enabled) {
+    if (!handle) return;
+    auto ctx = (StandaloneWindowContext*)handle;
+    ctx->paintEnabled = enabled;
+
+    if (enabled && !ctx->javaObj) {
+        env->GetJavaVM(&ctx->jvm);
+        ctx->javaObj = env->NewGlobalRef(obj);
+        jclass cls = env->GetObjectClass(obj);
+        ctx->paintMethod = env->GetMethodID(cls, "invokePaint", "(II)V");
+    } else if (!enabled && ctx->javaObj) {
+        env->DeleteGlobalRef(ctx->javaObj);
+        ctx->javaObj = nullptr;
+        ctx->paintMethod = nullptr;
     }
 }
 

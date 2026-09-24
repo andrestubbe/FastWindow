@@ -35,6 +35,8 @@ Primary window lifecycle and state abstraction. Implements `AutoCloseable`.
   Returns the raw 64-bit native window handle (`HWND`) for Vulkan/DirectX surface attachment.
 - `public void close()`  
   Destroys the native window (`DestroyWindow`) and releases associated unmanaged resources.
+- `public void setPaintListener(WindowPaintListener listener)`  
+  Registers a synchronous paint callback invoked directly from the native Win32 window procedure during modal resizing (`WM_SIZE`) and painting (`WM_PAINT`). Passes `(int width, int height)`.
 
 #### Window Styling & Text
 - `public void setTitle(String title)`  

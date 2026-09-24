@@ -157,6 +157,22 @@ public class FastNativeWindow implements AutoCloseable {
         }
     }
 
+    private WindowPaintListener paintListener;
+
+    public void setPaintListener(WindowPaintListener listener) {
+        this.paintListener = listener;
+        if (nativeHandle != 0) {
+            nSetPaintCallbackEnabled(nativeHandle, listener != null);
+        }
+    }
+
+    // Called directly from native code during WM_SIZING / WM_PAINT
+    private void invokePaint(int w, int h) {
+        if (paintListener != null) {
+            paintListener.onPaint(w, h);
+        }
+    }
+
     @Override
     public void close() {
         if (nativeHandle != 0) {
@@ -166,6 +182,7 @@ public class FastNativeWindow implements AutoCloseable {
     }
 
     // JNI Native methods
+    private native void nSetPaintCallbackEnabled(long handle, boolean enabled);
     private static native long nCreateWindow(String title, int width, int height);
     private static native void nDestroyWindow(long handle);
     private static native boolean nPollEvents(long handle);

@@ -24,3 +24,4 @@ EXPORTS
     Java_fastwindow_FastNativeWindow_nSetMinSize
     Java_fastwindow_FastNativeWindow_nSetMaxSize
     Java_fastwindow_FastNativeWindow_nSetIcon
+    Java_fastwindow_FastNativeWindow_nSetPaintCallbackEnabled
