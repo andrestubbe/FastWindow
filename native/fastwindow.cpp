@@ -50,6 +50,10 @@ struct StandaloneWindowContext {
         }
         if (env) {
             env->CallVoidMethod(javaObj, paintMethod, (jint)w, (jint)h);
+            if (env->ExceptionCheck()) {
+                env->ExceptionDescribe();
+                env->ExceptionClear();
+            }
         }
         if (attached) {
             jvm->DetachCurrentThread();
@@ -85,6 +89,7 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
             ctx->width = LOWORD(lParam);
             ctx->height = HIWORD(lParam);
             ctx->triggerPaint(ctx->width, ctx->height);
+            ValidateRect(hwnd, nullptr);
         }
         return 0;
 
