@@ -119,7 +119,9 @@ static LRESULT CALLBACK StandaloneWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
         return 0;
 
     case WM_DESTROY:
-        PostQuitMessage(0);
+        if (ctx) {
+            PostQuitMessage(0);
+        }
         return 0;
     }
 
