@@ -234,7 +234,7 @@ Download the latest JARs directly to add them to your classpath:
 
 - **[`FastCore`](https://github.com/andrestubbe/FastCore)** — Native Library Loader for Java
 - **[`FastTheme`](https://github.com/andrestubbe/FastTheme)** — Advanced UI Styling Engine (DWM/Mica/Acrylic)
-- **[`FastUI`](https://github.com/andrestubbe/FastUI)** — High-Performance Retained-Mode UI Framework
+- **[`FastGUI`](https://github.com/andrestubbe/FastGUI)** — High-Performance Retained-Mode UI Framework
 
 ---
 
